@@ -78,25 +78,6 @@ find_package(catkin REQUIRED COMPONENTS
 #   std_msgs  # Or other packages containing msgs
 # )
 
-################################################
-## Declare ROS dynamic reconfigure parameters ##
-################################################
-
-## To declare and build dynamic reconfigure parameters within this
-## package, follow these steps:
-## * In the file package.xml:
-##   * add a build_depend and a exec_depend tag for "dynamic_reconfigure"
-## * In this file (CMakeLists.txt):
-##   * add "dynamic_reconfigure" to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * uncomment the "generate_dynamic_reconfigure_options" section below
-##     and list every .cfg file to be processed
-
-## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
 
 ###################################
 ## catkin specific configuration ##
@@ -155,11 +136,17 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
+add_library(NODE src/NODE.cpp)
+target_link_libraries(NODE ${catkin_LIBRARIES})
+
 add_library(PRM src/PRM.cpp)
 target_link_libraries(PRM ${catkin_LIBRARIES})
 
+add_library(A_STAR src/A_STAR.cpp)
+target_link_libraries(A_STAR ${catkin_LIBRARIES})
+
 add_executable(path_planner src/path_planner.cpp)
-target_link_libraries(path_planner PRM ${catkin_LIBRARIES})
+target_link_libraries(path_planner PRM A_STAR NODE ${catkin_LIBRARIES})
 
 
 

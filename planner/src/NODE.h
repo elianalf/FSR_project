@@ -1,11 +1,11 @@
 #include "ros/ros.h"
-#include "nav_msgs/Odometry.h"
+
 
 using namespace std; 
 class NODE{
 
    public:
-      NODE();
+    NODE();
       
    double x;
    double y;
@@ -16,10 +16,4 @@ class NODE{
 
 };
 
-NODE::NODE(){
-    x=0;
-    y=0;
-    parent=-1;
-    cost_g=-1;
-   cost_f=-1;
-}
+

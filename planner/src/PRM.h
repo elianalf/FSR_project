@@ -4,9 +4,10 @@
 
 #define _width 276
 #define _height 416
-#define num_nodes 400
+#define num_nodes 600
 #define StepCollisionFreePath 0.05
 #define start_pos 0
+#define MaxRangeNode 1.5
 
 typedef int matrix_map[_height][_width];
 typedef double adj_matrix[num_nodes][num_nodes];

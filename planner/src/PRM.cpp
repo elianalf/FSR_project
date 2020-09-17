@@ -68,10 +68,10 @@ void _PRM::CreateConnections(matrix_map map){
          dx= nodes_list[i].x - new_nodex;
          dy= nodes_list[i].y - new_nodey;
           dist = sqrt((dx*dx)+(dy*dy) ); 
-         if(dist<1.5){ //save the connection if the distance is less than 1 m
+         if(dist<MaxRangeNode){ //save the connection if the distance is less than 1 m
             //cout<<"Found a node near the new one, is the path free?"<<endl;
             if (isCollisionFreePath(map, dx, dy, dist, new_nodex, new_nodey)){ 
-               cout<<"Create connection between "<<list_size-1<<"and "<< i<<"---------------------------"<< endl;
+               //cout<<"Create connection between "<<list_size-1<<"and "<< i<<"---------------------------"<< endl;
                num_connections++;
                AdjacencyMatrix[i][list_size-1]=dist;
                AdjacencyMatrix[list_size-1][i]=dist;
@@ -143,14 +143,15 @@ void _PRM::buildRoadMap(matrix_map map)
       
       while(!IsNewNode){
           rand_node=GenerateRandNode();
-          cout<<"Generate a new Rand Node: x "<<rand_node.x<<" y "<<rand_node.y<<endl;
+          //cout<<"Generate a new Rand Node: x "<<rand_node.x<<" y "<<rand_node.y<<endl;
          IsNewNode=CheckIfNodeIsNew(rand_node.x,rand_node.y);
       }
       IsNewNode=false;
      
      if(Collision_checking(rand_node.x, rand_node.y, map)==0){ //Each new node is first checked for collisions before being added
        nodes_list.push_back(rand_node); 
-       
+       int last_index=nodes_list.size() - 1;
+       cout<<"Adding node: "<<nodes_list[last_index].x<<" "<< nodes_list[last_index].y<<endl;
        //Now try to create connections between the new node and the others in the roadmap
        CreateConnections( map);
        
@@ -158,9 +159,10 @@ void _PRM::buildRoadMap(matrix_map map)
      }
     
       list_size=nodes_list.size();
-   cout<<"LIST SIZE: " <<list_size<<" num connection "<<num_connections<<endl;
    
-  }                     
+   
+  }
+  cout<<"LIST SIZE: " <<list_size<<" num connection "<<num_connections<<endl;                     
 }
 
 

@@ -1,65 +1,123 @@
-A_STAR::A_STAR(){
-   indexNbest=-1;
+#include "A_STAR.h"
 
+A_STAR::A_STAR(){
+   Nbest=-1;
 }
 
 
-void A_STAR::FindPathAStar(double x_ng, double y_ng){ //node goal in the roadmap
-   indexNbest=0;
+bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &nodes_list, adj_matrix AdjacencyMatrix){ // indexes in nodes_list of the closest node to goal in the roadmap and closest node to start
+   Nbest=0;
    bool path_found=false;
-   open_indexlist.push_back(0);
+   open_list.push_back(index_node_s);
    openlist_size=open_list.size();
+   nodes_list[0].cost_g=0;
+     double dx = 0;
+     double dy =0;
+    double h =0;
+   while((openlist_size>0)&&(!path_found)){
    
-   while((openlist_size>0)||(path_found)){
-   
-      indexNbest=FindExtractNbest();
-      if((nodes_list[indexNbest].x==x_ng)&&(nodes_list[indexNbest].y==y_ng)){
+      FindExtractNbest(nodes_list);
+      
+      //cout<<"New node Nbest "<<Nbest<<" "<<nodes_list[Nbest].x<<" "<<nodes_list[Nbest].y<<endl;
+      
+      //check if the new Nbest node is the goal node 
+      if(Nbest == indexGoalNode){
+         cout<<"Found a path"<<endl;
          path_found=true;
       }
-      for(j=0;j<num_nodes;j++){
-         if(AdjacencyMatrix[indexNbest][j]>0){ // >0 means there is a connection between node number "indexNbest" and node number "j"
-            if(cost_g!=0){
-            
+      else{
+         for(int j=0;j<num_nodes;j++){
+            if(AdjacencyMatrix[Nbest][j]>0){ // >0 means there is a connection between node number "Nbest" and node number "j"
+               //if cost_g is different from -1 the node j is visited because it has a cost
+              // cout<<"Nbest has connection with"<<j<<endl;
+               if(nodes_list[j].cost_g==-1){  //UNVISITED
+                  //cout<<"Node is unvisited, defining the cost and adding to OPEN"<<endl;
+                  nodes_list[j].cost_g = AdjacencyMatrix[Nbest][j]; //MARK AS VISITED ASSIGNING A COST
+                  nodes_list[j].parent=Nbest; //DEFINE THE PARENT IN THE TREE
+                  open_list.push_back(j);     //INSERT THE NODE J IN OPEN 
+                  dx = nodes_list[indexGoalNode].x -   nodes_list[j].x;
+                   dy = nodes_list[indexGoalNode].y -   nodes_list[j].y;
+                   h = sqrt(dx*dx+dy*dy);
+                  nodes_list[j].cost_f = nodes_list[j].cost_g + h ; 
+               }  
+               else if(nodes_list[Nbest].cost_g+AdjacencyMatrix[Nbest][j]<nodes_list[j].cost_g){ // VISITED
+                  //THE COST FROM START TO NBEST + THE DISTANCE BETWEEN J AND NBEST IS LESS THAN THE ONE SAVED MEANS THERE IS A BETTER PATH 
+                   nodes_list[j].parent=Nbest;
+                   nodes_list[j].cost_g = nodes_list[Nbest].cost_g+AdjacencyMatrix[Nbest][j];
+                   //cout<<"Node is visited but there is a better path, upgrating the info"<<endl;
+                   //CHECK IF THE NODE J IS IN OPEN  
+                   int indexInOpen=0;
+                   while((open_list[indexInOpen] != j)||(indexInOpen < open_list.size())){
+                     indexInOpen++;
+                   } 
+                   if(indexInOpen == open_list.size()){                       //NODE J IS NOT IN OPEN
+                        open_list.push_back(j);  //INSERT THE NODE J IN OPEN 
+                   }
+                   
+                  //upgrade (if is open) or assign a value (if it's not in open) of the f cost
+                    dx = nodes_list[indexGoalNode].x -   nodes_list[j].x;
+                    dy = nodes_list[indexGoalNode].y -   nodes_list[j].y;
+                    h = sqrt(dx*dx+dy*dy);
+                    nodes_list[j].cost_f = nodes_list[j].cost_g + h ; 
+                } 
             }
-            else{
-            
-            }// if cost_g is different from 0 the node is visited because it has a cost  
-      }
-      
-      openlist_size=open_indexlist.size();   
-   }
-
+         
+            openlist_size=open_list.size();   
+        }
+    } 
+  }
+  
+   return path_found;
 }
 
 
-void FindExtractNbest(){
-   
-   indexNbest=0; 
+
+void A_STAR::FindExtractNbest(vector< NODE > nodes_list){
+
    int node_number=-1;
-   int index=0;
+ /*  for(int i=0; i<open_list.size();i++){
+       cout<<"open list content "<<open_list[i]<<endl;
+   }
+*/
+   int indexInOpen=0;
+  // cout<<"openlist size "<<openlist_size<<endl;
+   Nbest=open_list[0];
    for(int i=0; i<openlist_size;i++){
-      node_number = open_indexlist[i];
-      if(nodes_list[node_number].cost_f<nodes_list[indexNbest].cost_f){
-         indexNbest = node_number;
-         index=i;
+      node_number = open_list[i];
+     // cout<<"node in openlist "<<open_list[i]<<endl;
+      if(nodes_list[node_number].cost_f<nodes_list[Nbest].cost_f){
+         Nbest = node_number; // nodeBest that we'll need as index for the nodes_list = name of the node (identified by a number) 
+         indexInOpen= i;
+
       }
    }
-   cout<<"Nbest found is at index "<<indexNbest<<" in list of nodes"<<endl;
-   cout<<"So extract this index: "<<open_indexlist[index]<<" from the OPEN list"<<endl;
-   open_indexlist.erase[index];
+  // cout<<"So extract this node: "<<open_list[indexInOpen]<<" from the OPEN list in index "<<indexInOpen<<endl;
+   vector<int>::iterator it=open_list.begin() +indexInOpen;
+   open_list.erase(it );
+
+  /* for(int i=0; i<open_list.size();i++){
+      cout<<"open list content "<<open_list[i]<<endl;
+   }*/
 }
 
 
-int A_STAR::ConnectStartGoalToRoadmap(matrix_map map, double x, double y)
+
+//return the index of the closest node in the roadmap to the start/goal position
+int A_STAR::ConnectStartGoalToRoadmap(matrix_map map, double x, double y, vector< NODE > nodes_list) //[X,Y] of start o goal position
 {
   double minD = 11;
   int minI = -1;
-  for (int i = 0; i < _prm.list_size; i++) {
-    double dx = x - nodes_list[i].x;
-    double dy = y - nodes_list[i].y;
-    double d = sqrt(dx*dx+dy*dy);
-    
-    if (d < minD && _prm.isCollisionFreePath( matrix_map map, dx, dy, d, nodes_list[i].x, nodes_list[i].y){
+  int l_size = nodes_list.size();
+  cout<<"l size "<<l_size<<endl;
+  double dx=0;
+  double dy=0;
+  double d=0;
+  for (int i = 0; i < l_size; i++) {
+     dx = x -nodes_list[i].x;
+     dy = y -nodes_list[i].y;
+     d = sqrt(dx*dx+dy*dy);
+    //cout<<"NOde "<<i<<" distance "<<d<<endl;
+    if ((d < minD) && (_prm.isCollisionFreePath(  map, dx, dy, d, nodes_list[i].x, nodes_list[i].y))){
       minD = d;
       minI = i;
     }
