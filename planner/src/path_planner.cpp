@@ -8,6 +8,8 @@ using namespace std;
 #define _width 276
 #define _height 416
 
+double x_start=0;
+double y_start=0;
 
 
 class NAV_MAIN{
@@ -20,8 +22,8 @@ class NAV_MAIN{
       ros::NodeHandle n;
       ros::Subscriber _topic_sub;	
       matrix_map map ;
-     float goal_x=0;
-     float goal_y=0;
+     float x_goal=0;
+     float y_goal=0;
      _PRM prm;
    
   
@@ -46,15 +48,18 @@ void NAV_MAIN::_map_cb(nav_msgs::OccupancyGrid vec_map){
 }
 
 void NAV_MAIN::path_planning(){
-   double goal_x=-2;                                                   //GOAL
-   double goal_y=-2;
-   cout<<"Gaol position: x "<<goal_x<<" y "<<goal_y<<endl;
-   if((abs(goal_x)>6.9)||(abs(goal_y)>10.4)){
+   double x_goal=-2;                                                   //GOAL
+   double y_goal=-2;
+   cout<<"Gaol position: x "<<x_goal<<" y "<<y_goal<<endl;
+   if((abs(x_goal)>6.9)||(abs(y_goal)>10.4)){
       cout<<"Outside the map. ";
       cout<<" "<<endl;
     }
+     else if(x_goal==x_start&&y_goal==y_start){
+      cout<<"start=goal, already in this position"<<endl;
+    }
     else{
-       int is_collision_free=prm.Collision_checking(goal_x,goal_y,map);
+       int is_collision_free = prm.Collision_checking(x_goal,y_goal,map);
           
          cout<<"Is the goal position collision free?"<<endl;
          if(is_collision_free==1){
@@ -66,56 +71,25 @@ void NAV_MAIN::path_planning(){
          else if(is_collision_free==-1){
             cout<<"Unexplored zone "<<endl;
          }
-    }
+    
     
     prm.nodes_list[0].x=0;
     prm.nodes_list[0].y=0;
     prm.buildRoadMap(map);
-    int list_s=prm.nodes_list.size();
+    int list_s = prm.nodes_list.size();
     cout<<"FINISH. SIZE "<<list_s<<endl;
-    
    
-    for(int i=0; i<100;i++) {
+   
+  /*  for(int i=0; i<100;i++) {
      cout<<i<<") ";
       for(int j=0;j<100;j++){
         cout<<prm.AdjacencyMatrix[i][j]<<"|"; 
       }
       cout<<endl;
-    }
+    }*/
      cout<<" "<<endl;
+     }
 }
-/*
-int NAV_MAIN::Collision_checking(){
-   
-   int i=0;
-   int j=0;
-   goal_x=4.9;
-   goal_y=0.1;
-   cout<<"goal "<<goal_x<< " "<<goal_y<<endl;
-   
-   if((abs(goal_x)>6.9)||(abs(goal_y)>10.4)){
-      cout<<"Outside the map. ";
-      return 0;}
-      
-   i = (10.4/0.05) - (goal_y/0.05); //in the map y=[-10.4m ,10.4m]  
-   j = (6.9/0.05) + (goal_x/0.05);  //in the map x = [-6.9m , 6.9m]
-   
-   if (map[i][j]>30){
-      cout<<"The value in map_matrix: "<<i<<" "<<j<<" "<<map[i][j]<<endl;
-      return 1;
-   }
-   else if(map[i][j]<0){
-      cout<<"The value in map_matrix: "<<i<<" "<<j<<" "<<map[i][j]<<endl;
-      return -1;
-   }
-   else {
-       cout<<"The value in map_matrix: "<<i<<" "<<j<<" "<<map[i][j]<<endl;
-       return 0;
-   }
-   
-}
-
-*/
 
 void NAV_MAIN::run(){
    ros::spin();

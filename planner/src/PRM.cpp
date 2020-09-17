@@ -18,8 +18,8 @@ _PRM::~_PRM()
 }
 
 
-geometry_msgs::Point  _PRM::GenerateRandNode()
-{  geometry_msgs::Point n;
+NODE  _PRM::GenerateRandNode()
+{  NODE n;
   //Range of integer x [-6;6] and y [-10;10] and range of decimal x [0.0, 0.1, ..., 0.9] y [0.0, ..., 0.4]
   int expon= rand()%2 +1;
   double decimal= rand()%10;
@@ -28,7 +28,7 @@ geometry_msgs::Point  _PRM::GenerateRandNode()
    decimal=rand()%10;
   n.y = (rand() % 11 + decimal/10)*pow(-1, expon);
   if(n.y>10.4){n.y=10;}   
-  n.z=0;
+  
 
   return n;
 }
@@ -82,8 +82,8 @@ void _PRM::CreateConnections(matrix_map map){
 
 
 bool _PRM::isCollisionFreePath( matrix_map map, double dx, double dy, double len, double xS, double yS)
-{ double step=StepCollisionFreePath;
-
+{
+ double step=StepCollisionFreePath;
   // The angle of the line
   double ang = atan2(dy, dx);
  // cout<<"Found a node near the new one, is the path free?"<<endl;
@@ -94,7 +94,7 @@ bool _PRM::isCollisionFreePath( matrix_map map, double dx, double dy, double len
   bool done = false;
   double x=0;
   double y=0;
-  double pos = step; // where on the line are we
+  double pos = step; 
   while (!done) {
           
      x = xS + pos * kx;
@@ -138,7 +138,7 @@ void _PRM::buildRoadMap(matrix_map map)
 {  
    list_size=nodes_list.size();
    bool IsNewNode= false;
-   geometry_msgs::Point  rand_node;
+   NODE  rand_node;
    while( list_size!=num_nodes){
       
       while(!IsNewNode){
@@ -160,55 +160,6 @@ void _PRM::buildRoadMap(matrix_map map)
       list_size=nodes_list.size();
    cout<<"LIST SIZE: " <<list_size<<" num connection "<<num_connections<<endl;
    
-                       /*  PRMNode *node = generateNodeWithRandomPosition(xMin, xMax, yMin, yMax);
-
-                         // Check if we can add it, is it does not collide with anything
-                         if (world.collidesWith(node->getX(), node->getY())) {
-
-                           // Delete the newly created node to avoid memory leaks
-                           delete node;
-
-                           // Go back up and create a new one
-                           continue;
-                         }
-
-                         // Try to connect this node to existing nodes in the neighborhod
-                         // of this node
-                         
-                         // Get list of distances to other nodes
-                         std::list< std::pair<double, int> > distances;
-                         getNodeDistances(node, distances);
-                         
-                         int k = 0;
-                         for (std::list< std::pair<double, int> >::iterator iter = distances.begin();
-                              iter != distances.end(); iter++) {
-
-                           // Skip the nodes if it is the same as we try to connect to
-                           if (iter->second == n) {
-                             continue;
-                           }
-
-                           // Check if the path between the nodes is free from collisions
-                           if (isCollisionFreePath(world,
-                                                   node->getX(), 
-                                                   node->getY(),
-                                                   m_Nodes[iter->second]->getX(), 
-                                                   m_Nodes[iter->second]->getY(),
-                                                   step)) {
-
-                             m_Nodes[iter->second]->addNewEdge(node);
-                             node->addNewEdge(m_Nodes[iter->second]);
-                             m_Edges.push_back( std::make_pair(n, iter->second) );        
-                           }
-                           
-                           // If we have tested enough of the neighbors we break here
-                           k++;
-                           if (k >= K) break;
-                         } 
-
-                         m_Nodes.push_back(node);
-                         n++;
-                       }*/
   }                     
 }
 
