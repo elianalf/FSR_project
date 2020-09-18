@@ -9,8 +9,8 @@ using namespace std;
 #define _width 276
 #define _height 416
 
-double x_start=-1;
-double y_start=-1;
+double x_start=0;
+double y_start=0;
 int indexStartNode=0;
 
 class NAV_MAIN{
@@ -100,9 +100,10 @@ void NAV_MAIN::path_planning(){
    int i=indexGoalNode;
    cout<<"Path (from the end)"<<endl;
    cout<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
-   while ( i!= indexStartNode){
+   
       i=prm.nodes_list[indexGoalNode].parent;
       cout<<prm.nodes_list[i].x<<" "<<prm.nodes_list[i].y<<" "<<i<<endl;
+      while ( i!= indexStartNode){
     i=prm.nodes_list[i].parent;  
      cout<<prm.nodes_list[i].x<<" "<<prm.nodes_list[i].y<<" "<<i<<endl;
  /*  i=prm.nodes_list[i].parent;  
