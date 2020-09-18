@@ -12,7 +12,8 @@ class NODE{
    int parent;
    double cost_g;
    double cost_f;
-   
+   vector<int> AdjacencyVector;
+   vector<double> ArcCost;
 
 };
 

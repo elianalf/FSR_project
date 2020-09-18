@@ -10,7 +10,7 @@ class A_STAR{
    public:
       A_STAR();
 
-      int ConnectStartGoalToRoadmap(matrix_map map, double x, double y,vector< NODE >);
+      
       bool FindPathAStar(int, int index_node_s, vector< NODE >& , adj_matrix );
       void FindExtractNbest(vector<NODE>);
    private:

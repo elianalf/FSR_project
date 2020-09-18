@@ -8,11 +8,11 @@ using namespace std;
 #define _width 276
 #define _height 416
 
-double x_start=0;
-double y_start=0;
+double x_start=1;
+double y_start=2;
 int indexStartNode=0;
-double x_goal=5; //GOAL
-double y_goal=2.5;
+double x_goal=4; //GOAL
+double y_goal=-0.5;
    
 class NAV_MAIN{
    public:
@@ -86,7 +86,7 @@ void NAV_MAIN::path_planning(){
             cout<<endl;
           }*/
        
-       int indexGoalNode = a_star.ConnectStartGoalToRoadmap(map,  x_goal,  y_goal, prm.nodes_list); 
+       int indexGoalNode = prm.ConnectStartGoalToRoadmap(map,  x_goal,  y_goal, prm.nodes_list); 
        cout<<"Index goal node "<<indexGoalNode<<" "<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
       bool existPath = a_star.FindPathAStar( indexGoalNode, indexStartNode, prm.nodes_list, prm.AdjacencyMatrix);
       cout<<"Is there a path? "<<endl;

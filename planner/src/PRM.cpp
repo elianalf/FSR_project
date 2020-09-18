@@ -2,11 +2,7 @@
 
 _PRM::_PRM()
 { //INITIALIZATION
- for(int i=0; i< num_nodes; i++){
-    for(int j=0; j< num_nodes;j++){
-      AdjacencyMatrix[i][j]=0;
-    }
-   }
+ 
    nodes_list.resize(1);
    num_connections=0;
 }
@@ -57,13 +53,11 @@ int  _PRM::Collision_checking(double n_x,double n_y,  matrix_map map){
 
 void _PRM::CreateConnections(matrix_map map){
       list_size= nodes_list.size();
-      
       double dist=0;
       double dx=0;
       double dy=0;
       double new_nodex = nodes_list.back().x;
       double new_nodey = nodes_list.back().y;
-      
       for(int i=0; i< (list_size-1); i++){
          dx= nodes_list[i].x - new_nodex;
          dy= nodes_list[i].y - new_nodey;
@@ -73,8 +67,14 @@ void _PRM::CreateConnections(matrix_map map){
             if (isCollisionFreePath(map, dx, dy, dist, new_nodex, new_nodey)){ 
                //cout<<"Create connection between "<<list_size-1<<"and "<< i<<"---------------------------"<< endl;
                num_connections++;
-               AdjacencyMatrix[i][list_size-1]=dist;
-               AdjacencyMatrix[list_size-1][i]=dist;
+               
+               nodes_list[i].AdjacencyVector.push_back(list_size-1);
+               nodes_list[list_size-1].AdjacencyVector.push_back(i);
+               nodes_list[i].ArcCost.push_back(dist);
+               nodes_list[list_size-1].ArcCost.push_back(dist);
+               
+            /*   AdjacencyMatrix[i][list_size-1]=dist;
+               AdjacencyMatrix[list_size-1][i]=dist;*/
             }
          }
       }
@@ -96,7 +96,6 @@ bool _PRM::isCollisionFreePath( matrix_map map, double dx, double dy, double len
   double y=0;
   double pos = step; 
   while (!done) {
-          
      x = xS + pos * kx;
      y = yS + pos * ky;
     // cout<<"Point on a path (is free?): "<<x <<" "<<y<<endl;
@@ -111,9 +110,9 @@ bool _PRM::isCollisionFreePath( matrix_map map, double dx, double dy, double len
          done = true; 
     }
   }
-   
   return iscollisionfree;
 }
+
 
 bool _PRM::CheckIfNodeIsNew(double nodex,double nodey){
    bool done=false;
@@ -165,4 +164,61 @@ void _PRM::buildRoadMap(matrix_map map)
   cout<<"LIST SIZE: " <<list_size<<" num connection "<<num_connections<<endl;                     
 }
 
+//return the index of the closest node in the roadmap to the start/goal position
+/*int _PRM::ConnectStartGoalToRoadmap(matrix_map map, double x, double y, vector< NODE > nodes_list) //[X,Y] of start o goal position
+{
+  double minD = 11;
+  int minI = -1;
+  int l_size = nodes_list.size();
+  cout<<"l size "<<l_size<<endl;
+  double dx=0;
+  double dy=0;
+  double d=0;
+  for (int i = 0; i < l_size; i++) {
+     dx = x -nodes_list[i].x;
+     dy = y -nodes_list[i].y;
+     d = sqrt(dx*dx+dy*dy);
+    //cout<<"NOde "<<i<<" distance "<<d<<endl;
+    if ((d < minD) && (_prm.isCollisionFreePath(  map, dx, dy, d, nodes_list[i].x, nodes_list[i].y))){
+      minD = d;
+      minI = i;
+    }
+  }
+ 
+  return minI;
+}*/
+
+/*[x,y] is the position of start o goal. If the node don't already belong to the list of nodes, it's added. 
+Then return the index in the list.*/
+int _PRM::ConnectStartGoalToRoadmap(matrix_map map, double x, double y, vector< NODE > &nodes_list) 
+{
+  
+  int l_size = nodes_list.size();
+  cout<<"l size "<<l_size<<endl;
+  if(CheckIfNodeIsNew( x, y)){
+     NODE new_n;
+     new_n.x=x;
+     new_n.y=y;
+     nodes_list.push_back(new_n);
+     CreateConnections(map);
+     cout<<nodes_list.size()<<endl;
+     
+     return l_size; //l_size is also the index of the new node added
+   }
+   else{
+     for (int i = 0; i < l_size; i++) {
+     double dx=0;
+     double dy=0;
+     double d=0;
+        dx = x -nodes_list[i].x;
+        dy = y -nodes_list[i].y;
+        d = sqrt(dx*dx+dy*dy);
+       cout<<"NOde "<<i<<" distance "<<d<<endl;
+       if (d==0){
+        return i;
+       }
+     }
+  }
+  
+}
 

@@ -24,6 +24,7 @@ class _PRM {
       bool isCollisionFreePath( matrix_map map, double dx, double dy, double len, double xS, double yS);
       void buildRoadMap(matrix_map map);
       bool CheckIfNodeIsNew(double nodex,double nodey);
+      int ConnectStartGoalToRoadmap(matrix_map map, double x, double y,vector< NODE >&);
       vector< NODE > nodes_list;
       adj_matrix AdjacencyMatrix;
       int list_size=0;
