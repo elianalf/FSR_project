@@ -151,7 +151,7 @@ void _PRM::buildRoadMap(matrix_map map)
      if(Collision_checking(rand_node.x, rand_node.y, map)==0){ //Each new node is first checked for collisions before being added
        nodes_list.push_back(rand_node); 
        int last_index=nodes_list.size() - 1;
-       cout<<"Adding node: "<<nodes_list[last_index].x<<" "<< nodes_list[last_index].y<<endl;
+      // cout<<"Adding node: "<<nodes_list[last_index].x<<" "<< nodes_list[last_index].y<<endl;
        //Now try to create connections between the new node and the others in the roadmap
        CreateConnections( map);
        

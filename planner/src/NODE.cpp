@@ -3,7 +3,7 @@
 NODE::NODE(){
     x=0;
     y=0;
-    parent=-1;
-    cost_g=-1;
-   cost_f=-1;
+    parent=0;
+    cost_g=0;
+   cost_f=0;
 }

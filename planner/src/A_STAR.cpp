@@ -18,11 +18,11 @@ bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &
    
       FindExtractNbest(nodes_list);
       
-      //cout<<"New node Nbest "<<Nbest<<" "<<nodes_list[Nbest].x<<" "<<nodes_list[Nbest].y<<endl;
+      cout<<"New node Nbest "<<Nbest<<" "<<nodes_list[Nbest].x<<" "<<nodes_list[Nbest].y<<endl;
       
       //check if the new Nbest node is the goal node 
       if(Nbest == indexGoalNode){
-         cout<<"Found a path"<<endl;
+         cout<<"FOUND A PATH"<<endl;
          path_found=true;
       }
       else{
@@ -30,9 +30,10 @@ bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &
             if(AdjacencyMatrix[Nbest][j]>0){ // >0 means there is a connection between node number "Nbest" and node number "j"
                //if cost_g is different from -1 the node j is visited because it has a cost
               // cout<<"Nbest has connection with"<<j<<endl;
-               if(nodes_list[j].cost_g==-1){  //UNVISITED
+               if(nodes_list[j].cost_g==0){  //UNVISITED
                   //cout<<"Node is unvisited, defining the cost and adding to OPEN"<<endl;
-                  nodes_list[j].cost_g = AdjacencyMatrix[Nbest][j]; //MARK AS VISITED ASSIGNING A COST
+                  nodes_list[j].cost_g =   nodes_list[Nbest].cost_g + AdjacencyMatrix[Nbest][j]; //MARK AS VISITED ASSIGNING A COST
+                  //cout<<"NODE UNVISITED"<<j<<" cost g "<<nodes_list[j].cost_g<<endl;
                   nodes_list[j].parent=Nbest; //DEFINE THE PARENT IN THE TREE
                   open_list.push_back(j);     //INSERT THE NODE J IN OPEN 
                   dx = nodes_list[indexGoalNode].x -   nodes_list[j].x;
@@ -44,11 +45,14 @@ bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &
                   //THE COST FROM START TO NBEST + THE DISTANCE BETWEEN J AND NBEST IS LESS THAN THE ONE SAVED MEANS THERE IS A BETTER PATH 
                    nodes_list[j].parent=Nbest;
                    nodes_list[j].cost_g = nodes_list[Nbest].cost_g+AdjacencyMatrix[Nbest][j];
+                   //cout<<"NODE "<<j<<" NEW cost g "<<nodes_list[j].cost_g<<endl;
                    //cout<<"Node is visited but there is a better path, upgrating the info"<<endl;
-                   //CHECK IF THE NODE J IS IN OPEN  
+                    
                    int indexInOpen=0;
-                   while((open_list[indexInOpen] != j)||(indexInOpen < open_list.size())){
+                   //CHECK IF THE NODE J IS IN OPEN 
+                   while((open_list[indexInOpen] != j)&&(indexInOpen < open_list.size())){
                      indexInOpen++;
+                    
                    } 
                    if(indexInOpen == open_list.size()){                       //NODE J IS NOT IN OPEN
                         open_list.push_back(j);  //INSERT THE NODE J IN OPEN 
@@ -59,6 +63,7 @@ bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &
                     dy = nodes_list[indexGoalNode].y -   nodes_list[j].y;
                     h = sqrt(dx*dx+dy*dy);
                     nodes_list[j].cost_f = nodes_list[j].cost_g + h ; 
+                    //cout<<"cos f "<<endl;
                 } 
             }
          
@@ -66,7 +71,6 @@ bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &
         }
     } 
   }
-  
    return path_found;
 }
 
