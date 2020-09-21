@@ -6,8 +6,14 @@ project(p3dx_control)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   controller_manager
-)
+ geometry_msgs
+  roscpp
+  gazebo_msgs
+  roslib
+	tf
 
+)
+find_package(Eigen3 REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -36,10 +42,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs  # Or other packages containing msgs
+   actionlib_msgs
+ )
 
 ###################################
 ## catkin specific configuration ##
@@ -66,6 +73,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
 )
 
 ## Declare a cpp library
@@ -85,5 +93,8 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
-add_executable(mover mover.cpp)
-target_link_libraries(mover ${catkin_LIBRARIES})
+
+add_executable(controller controller.cpp)
+target_link_libraries(controller ${catkin_LIBRARIES})
+
+
