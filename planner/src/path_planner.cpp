@@ -22,8 +22,8 @@ using namespace std;
 
 
 
-double x_goal=-4; //GOAL
-double y_goal=8;
+double x_goal=1; //GOAL
+double y_goal=2;
 int indexStartNode=0;
 double x_start=0;
 double y_start=0;
@@ -132,16 +132,16 @@ void NAV_MAIN::plan_trajectory(){
        //cout<< "xdd ydd "<<xdd<<" "<<ydd<<endl;
        
        teta_e=teta_new-teta_old;
-       cout<<"teta e" <<teta_e<<endl;
+       //cout<<"teta e" <<teta_e<<endl;
        if(fabs((teta_new+3.14) - (teta_old+3.14)) > 3.14){ v.angular.z = ang_vel_max * ((teta_e>0)?-1:1); }
        else { v.angular.z = ang_vel_max * ((teta_e>0)?1:-1); }
-        cout<<"w angl "<< v.angular.z<<endl; 
+       // cout<<"w angl "<< v.angular.z<<endl; 
         
        interval=abs(teta_e) / ang_vel_max; //time interval
        nstep=interval/Ts;
        //cout<<j<< "n step angle"<<nstep<<endl;
        v.linear.x=0;
-       //cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
+       cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
        //teta_buf=teta_old;
        
        for(int k=0;k<nstep;k++){
@@ -152,7 +152,7 @@ void NAV_MAIN::plan_trajectory(){
          i++;
        }
        cout<<"size "<<v_des.size()<<" "<<p.poses.size()<<endl;
-     while((des_node - curr_p).norm() > 0.04){
+     while((des_node - curr_p).norm() > 0.009){
        dir = des_node - curr_p;
        dir = dir / dir.norm();
        curr_p+= dir*(1.0/n_step); //4.46 pag 185
@@ -163,7 +163,7 @@ void NAV_MAIN::plan_trajectory(){
        //cout<<i<<" P "<<p.poses[i].pose.position.x<<" "<<p.poses[i-1].pose.position.x<<endl;
        t.linear.x=(p.poses[i].pose.position.x-p.poses[i-1].pose.position.x)/Ts;
        t.linear.y=(p.poses[i].pose.position.y-p.poses[i-1].pose.position.y)/Ts;
-       //cout<< "vel "<<t.linear.x<<" "<<t.linear.y<<endl;
+      // cout<< "vel "<<t.linear.x<<" "<<t.linear.y<<endl;
        pd.push_back(t);
        //teta_buf=atan2(pd[i].linear.y,pd[i].linear.x);
        teta_des.push_back(teta_new);
@@ -172,15 +172,16 @@ void NAV_MAIN::plan_trajectory(){
        v.angular.z = 0;
        v.linear.x=sqrt(pd[i].linear.x*pd[i].linear.x+pd[i].linear.y*pd[i].linear.y); //v des
        v_des.push_back(v);
-       //cout<< "v_ w "<<v.linear.x<<" "<<v.angular.z<<endl;
+       cout<< "v_ w "<<v.linear.x<<" "<<v.angular.z<<endl;
        //t.angular.z=(ydd*pd[i].linear.x-xdd*pd[i].linear.y)/(pd[i].linear.x*pd[i].linear.x+pd[i].linear.y*pd[i].linear.y); //w des
        i++;
      }
-     curr_p+= dir*(1.0/n_step);
+     //curr_p+= dir*(1.0/n_step);
    }
-   
+   sleep(10);
 }
 
+/*
 void NAV_MAIN::nav_loop(){
    cout<<"5"<<endl;
    ros::Rate r(100);
@@ -196,9 +197,19 @@ void NAV_MAIN::nav_loop(){
    Eigen::Vector3d e;
    double u1=0;
    double u2=0;
-   int k1=1.4;
+   int k1=1.8;
    int k2=1;
-   int k3=1.4;
+   int k3=1.8;
+  //  int k1=1.4;
+  // int k2=1;
+   //int k3=2.8;
+   //P DES: 0.979835 1.97117 0.960369
+   //P CURRENT: 0.853282 1.83062 0.950774
+   //int k1=2.8;
+   //int k2=2;
+   //int k3=2.8;
+   //P DES: 0.979835 1.97117 0.960369
+  // P CURRENT: 0.843526 1.82731 0.953955
    double teta=0;
    for(i=0;i<traj_size;i++){
       teta=_yaw;
@@ -211,16 +222,21 @@ void NAV_MAIN::nav_loop(){
       cos_sin(2,0)=0;
       cos_sin(2,1)=0;
       cos_sin(2,2)=1;
-      e<< (p.poses[i].pose.position.x -odom_pos.x), (p.poses[i].pose.position.y-odom_pos.y), (teta_des[i]-teta);
+      q_e<< (p.poses[i].pose.position.x -odom_pos.x), (p.poses[i].pose.position.y-odom_pos.y), (teta_des[i]-teta);
       //cout<<"P DES: "<<p.poses[i].pose.position.x <<" "<<p.poses[i].pose.position.y<<" "<<teta_des[i]<<endl;
+      //cout<<"P CURRENT: "<<odom_pos.x <<" "<<odom_pos.y<<" "<<teta<<endl;
       e=cos_sin*q_e;
-      
+      cout<<"ERROR: "<<e.transpose()<<endl;
+     if(abs(e(2))>3.14)
+         e(2)=-e(2);
+         
       if(e(2)==0){k=0;}
       else{k=sin(e(2))/e(2);}
       
       u1=-k1*e(0);
-      u2= - k2*v_des[i].linear.x*e(1)*k - k3*e(2);
       cmd_v.linear.x=v_des[i].linear.x*cos(e(2)) - u1;
+      
+      u2= - k2*v_des[i].linear.x*e(1)*k - k3*e(2);
       cmd_v.angular.z=v_des[i].angular.z - u2;
       
       twist_pub.publish(cmd_v);
@@ -233,8 +249,8 @@ void NAV_MAIN::nav_loop(){
    go=false;
   while (ros::ok()){r.sleep(); }
 }
+*/
 
-/*
 void NAV_MAIN::nav_loop(){
    cout<<"5"<<endl;
    ros::Rate r(100);
@@ -263,9 +279,13 @@ void NAV_MAIN::nav_loop(){
       cos_sin(2,0)=0;
       cos_sin(2,1)=0;
       cos_sin(2,2)=1;
-      e<< (p.poses[i].pose.position.x -odom_pos.x), (p.poses[i].pose.position.y-odom_pos.y), (teta_des[i]-teta);
-      cout<<"P DES: "<<p.poses[i].pose.position.x <<" "<<p.poses[i].pose.position.y<<" "<<teta_des[i]<<endl;
+      q_e<< (p.poses[i].pose.position.x -odom_pos.x), (p.poses[i].pose.position.y-odom_pos.y), (teta_des[i]-teta);
       e=cos_sin*q_e;
+       //cout<<"P DES: "<<p.poses[i].pose.position.x <<" "<<p.poses[i].pose.position.y<<" "<<teta_des[i]<<endl;
+       cout<<"ERROR: "<<e.transpose()<<endl;
+       if(abs(e(2))>3.14)
+         e(2)=-e(2);
+         
       if(v_des[i].linear.x==0){
          cmd_v.linear.x=0;
          k2=0;
@@ -287,7 +307,7 @@ void NAV_MAIN::nav_loop(){
    go=false;
   while (ros::ok()){r.sleep(); }
 }
-*/
+
 
 
 void NAV_MAIN::_map_cb(nav_msgs::OccupancyGrid vec_map){
