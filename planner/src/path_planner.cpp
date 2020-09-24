@@ -187,7 +187,7 @@ void NAV_MAIN::plan_trajectory(){
 }
 
 
-/*  //CONTROL BASED ON APPROXIMATE LINEARIZATION
+/*  //NON LINEAR CONTROL
 
 void NAV_MAIN::nav_loop(){
    cout<<"5"<<endl;
@@ -253,7 +253,7 @@ void NAV_MAIN::nav_loop(){
 */
 
 
-// NON LINEAR CONTROL 
+//  CONTROL BASED ON APPROXIMATE LINEARIZATION
 
 void NAV_MAIN::nav_loop(){
    cout<<"5"<<endl;
