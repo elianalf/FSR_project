@@ -108,18 +108,17 @@ void NAV_MAIN::plan_trajectory(){
    double teta_e=0;
    double interval;
    
-   
    //initialization
    c_p.pose.position.x =x_start;
    c_p.pose.position.y = y_start;
    p.poses.push_back(c_p);
    t.linear.x=0;
    t.linear.y=0;
-  
    pd.push_back(t);
    v_des.push_back(t);
    teta_des.push_back(0);
    double teta_buf=0;
+   
    //plan trajectory
    int i=1;
    for(int j=1;j<nNodesPath;j++){
@@ -132,12 +131,10 @@ void NAV_MAIN::plan_trajectory(){
        
        interval=dir.norm() / lin_vel_max; //time interval
        n_step=interval/Ts;//n step
-       //xdd=(pd[i].linear.x-pd[i-1].linear.x)/Ts;
-       //ydd=(pd[i].linear.y-pd[i-1].linear.y)/Ts;
-       //cout<< "xdd ydd "<<xdd<<" "<<ydd<<endl;
+       
        
        teta_e=teta_new-teta_old;
-       //cout<<"teta e" <<teta_e<<endl;
+       cout<<"teta new" <<teta_new<<endl;
        if(fabs((teta_new+3.14) - (teta_old+3.14)) > 3.14){ v.angular.z = ang_vel_max * ((teta_e>0)?-1:1); }
        else { v.angular.z = ang_vel_max * ((teta_e>0)?1:-1); }
        // cout<<"w angl "<< v.angular.z<<endl; 
@@ -146,9 +143,7 @@ void NAV_MAIN::plan_trajectory(){
        nstep=interval/Ts;
        //cout<<j<< "n step angle"<<nstep<<endl;
        v.linear.x=0;
-       cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
-       //teta_buf=teta_old;
-       
+       //cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
        for(int k=0;k<nstep;k++){
          teta_des.push_back(teta_new);
          p.poses.push_back(c_p);
@@ -157,11 +152,14 @@ void NAV_MAIN::plan_trajectory(){
          i++;
        }
        cout<<"size "<<v_des.size()<<" "<<p.poses.size()<<endl;
-     while((des_node - curr_p).norm() > 0.009){
+       
+     //while((des_node - curr_p).norm() > 0.01){
+      for(int o=0; o<n_step;o++){
        dir = des_node - curr_p;
        dir = dir / dir.norm();
        curr_p+= dir*(1.0/n_step); //4.46 pag 185
-       //cout<< "Current position "<< curr_p.transpose()<<endl;
+      
+       cout<< "Current position "<< curr_p.transpose()<<endl;
        c_p.pose.position.x = curr_p(0);
        c_p.pose.position.y = curr_p(1);
        p.poses.push_back(c_p);
@@ -177,17 +175,17 @@ void NAV_MAIN::plan_trajectory(){
        v.angular.z = 0;
        v.linear.x=sqrt(pd[i].linear.x*pd[i].linear.x+pd[i].linear.y*pd[i].linear.y); //v des
        v_des.push_back(v);
-       cout<< "v_ w "<<v.linear.x<<" "<<v.angular.z<<endl;
+       cout<< "Vd Wd "<<v.linear.x<<" "<<v.angular.z<<endl;
        //t.angular.z=(ydd*pd[i].linear.x-xdd*pd[i].linear.y)/(pd[i].linear.x*pd[i].linear.x+pd[i].linear.y*pd[i].linear.y); //w des
        i++;
      }
      //curr_p+= dir*(1.0/n_step);
    }
-   sleep(10);
+   sleep(3);
 }
 
 
-/*  //CONTROL BASED ON APPROXIMATE LINEARIZATION
+  //NON LINEAR CONTROL
 
 void NAV_MAIN::nav_loop(){
    cout<<"5"<<endl;
@@ -196,6 +194,7 @@ void NAV_MAIN::nav_loop(){
       r.sleep();   
    }
    plan_trajectory();
+   
    int i=0;
    int traj_size=v_des.size();
    double k=0;
@@ -204,13 +203,12 @@ void NAV_MAIN::nav_loop(){
    Eigen::Vector3d e;
    double u1=0;
    double u2=0;
-   int k1=1.8;
-   int k2=1;
-   int k3=1.8;
-  // int k1=1.8;
-  // int k2=1;
-  // int k3=1.8;
-  //ERROR:   0.05178 0.0625274  0.170768
+   int k1=1.9;
+   int k2=2.1;
+  int k3=1.9;
+  //1.8 2 1.8 ERROR:   -0.0913248 0.00684787 -0.0230394
+    //1.9 2.1 1.9 ERROR  -0.0864483 0.00439498 -0.0217074
+    // 1.9 2.2 1.9 ERROR: -0.0922016 0.00687282 -0.0233763
    double teta=0;
    for(i=0;i<traj_size;i++){
       teta=_yaw;
@@ -228,15 +226,15 @@ void NAV_MAIN::nav_loop(){
       //cout<<"P CURRENT: "<<odom_pos.x <<" "<<odom_pos.y<<" "<<teta<<endl;
       e=cos_sin*q_e;
       cout<<"ERROR: "<<q_e.transpose()<<endl;
-     if(abs(e(2))>3.14)
-         e(2)=-e(2);
+    if(abs(e(2))>3.14)
+       e(2)=-e(2);
          
-      if(e(2)==0){k=0;}
-      else{k=sin(e(2))/e(2);}
       
       u1=-k1*e(0);
       cmd_v.linear.x=v_des[i].linear.x*cos(e(2)) - u1;
       
+      if(e(2)==0){k=0;}
+      else{ k=sin(e(2))/e(2); }
       u2= - k2*v_des[i].linear.x*e(1)*k - k3*e(2);
       cmd_v.angular.z=v_des[i].angular.z - u2;
       
@@ -245,16 +243,16 @@ void NAV_MAIN::nav_loop(){
    } 
   cmd_v.angular.z=0;
   cmd_v.linear.x=0; 
-   twist_pub.publish(cmd_v);
+  twist_pub.publish(cmd_v);
    
-   go=false;
+  go=false;
   while (ros::ok()){r.sleep(); }
 }
-*/
 
 
-// NON LINEAR CONTROL 
 
+//  CONTROL BASED ON APPROXIMATE LINEARIZATION
+/*
 void NAV_MAIN::nav_loop(){
    cout<<"5"<<endl;
    ros::Rate r(100);
@@ -311,9 +309,11 @@ void NAV_MAIN::nav_loop(){
    go=false;
   while (ros::ok()){r.sleep(); }
 }
+*/
 
 
-/* //FOR FB LINEARIZATION
+/*
+ //plan FOR FB LINEARIZATION
 
 void NAV_MAIN::plan_trajectory(){
 cout<<"4"<<endl;
@@ -370,10 +370,10 @@ cout<<"4"<<endl;
        p.poses.push_back(c_p);
        //cout<<i<<" P "<<p.poses[i].pose.position.x<<" "<<p.poses[i-1].pose.position.x<<endl;
        
-       //y12.linear.x = p.poses[i].pose.position.x + b*cos(teta_new); //y1:des= x_des + b* cos(teta_des)
-       //y12.linear.y = p.poses[i].pose.position.y + b*sin(teta_new);
-       y12.linear.x = p.poses[i].pose.position.x ; //y1:des= x_des + b* cos(teta_des)
-       y12.linear.y = p.poses[i].pose.position.y ; 
+       y12.linear.x = p.poses[i].pose.position.x + b*cos(teta_new); //y1:des= x_des + b* cos(teta_des)
+       y12.linear.y = p.poses[i].pose.position.y + b*sin(teta_new);
+       //y12.linear.x = p.poses[i].pose.position.x ; //y1:des= x_des + b* cos(teta_des)
+       //y12.linear.y = p.poses[i].pose.position.y ; 
        y12_des.push_back(y12);
        
        t.linear.x=(y12_des[i].linear.x-y12_des[i-1].linear.x)/Ts;
@@ -386,7 +386,7 @@ cout<<"4"<<endl;
      }
      //curr_p+= dir*(1.0/n_step);
    }
-   sleep(5);
+   sleep(3);
 }
 
 
@@ -403,8 +403,8 @@ void NAV_MAIN::nav_loop(){
    int traj_size=y12dot_des.size();
    double u1=0;
    double u2=0;
-   int k1=0.5;
-   int k2=0.5;
+   int k1=1.8; //best  k= 1.5 b= 0.9 ERROR -0.259543 0.0585811
+   int k2=1.8 ; //k=2 b=0.5 ERROR 0.0602071 -0.0179005
    double y1=0;
    double y2=0;
    double teta=0;
@@ -413,16 +413,16 @@ void NAV_MAIN::nav_loop(){
       teta=_yaw;
       y1= odom_pos.x + b*cos(teta);
       y2 = odom_pos.y + b*sin(teta);
-      
+      cout<<"ERROR "<<p.poses[i].pose.position.x-odom_pos.x<<" "<<p.poses[i].pose.position.y-odom_pos.y<<endl;
       //cout<< "Aux vel "<<y12dot_des[i].linear.x<<" "<<y12dot_des[i].linear.y<<endl;
       u1=y12dot_des[i].linear.x + k1*(y12_des[i].linear.x - y1 );
       u2=y12dot_des[i].linear.y + k2*(y12_des[i].linear.y - y2);
-      cout<< "e "<<y12_des[i].linear.x - y1<<" "<<y12_des[i].linear.y - y2<<endl;
-      cout<< "U1 U2 "<<u1<<" "<<u2<<endl;
+      //cout<< "e "<<y12_des[i].linear.x - y1<<" "<<y12_des[i].linear.y - y2<<endl;
+      //cout<< "U1 U2 "<<u1<<" "<<u2<<endl;
       
       cmd_v.linear.x = cos(teta)*u1 + sin(teta)*u2;
       cmd_v.angular.z = -sin(teta)*u1/b + cos(teta)*u2/b;
-      cout<< "COMMAND V W "<<cmd_v.linear.x<<" "<<cmd_v.angular.z<<endl;
+      //cout<< "COMMAND V W "<<cmd_v.linear.x<<" "<<cmd_v.angular.z<<endl;
       
       twist_pub.publish(cmd_v);
       r.sleep();
@@ -435,6 +435,7 @@ void NAV_MAIN::nav_loop(){
   while (ros::ok()){r.sleep(); }
 }
 */
+
 
 void NAV_MAIN::_map_cb(nav_msgs::OccupancyGrid vec_map){
    //cout<<"Vector size "<<vec_map.data.size()<<endl;
@@ -486,12 +487,12 @@ void NAV_MAIN::path_planning(){
             cout<<endl;
           }*/
        
-       int indexGoalNode = prm.ConnectStartGoalToRoadmap(map,  x_goal,  y_goal, prm.nodes_list); 
-       cout<<"Index goal node "<<indexGoalNode<<" "<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
+         int indexGoalNode = prm.ConnectStartGoalToRoadmap(map,  x_goal,  y_goal, prm.nodes_list); 
+         cout<<"Index goal node "<<indexGoalNode<<" "<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
          bool existPath = a_star.FindPathAStar( indexGoalNode, indexStartNode, prm.nodes_list, prm.AdjacencyMatrix);
          cout<<"Is there a path? "<<endl;
          if(existPath){
-            cout<<"yes"<<endl;
+            cout<<"YES"<<endl;
             int i=indexGoalNode;
             cout<<"Path (from the end)"<<endl;
             cout<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
@@ -509,11 +510,12 @@ void NAV_MAIN::path_planning(){
                cout<<x_path[j]<<" "<<y_path[j]<<endl;
             
             }
+            sleep(3);
             go=true;
            cout<<" "<<endl;
          }
          else{
-            cout<<"no"<<endl;
+            cout<<"NO"<<endl;
             
          }
      }  
