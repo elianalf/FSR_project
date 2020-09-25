@@ -158,8 +158,6 @@ void _PRM::buildRoadMap(matrix_map map)
      }
     
       list_size=nodes_list.size();
-   
-   
   }
   cout<<"LIST SIZE: " <<list_size<<" num connection "<<num_connections<<endl;                     
 }
@@ -194,7 +192,7 @@ int _PRM::ConnectStartGoalToRoadmap(matrix_map map, double x, double y, vector< 
 {
   
   int l_size = nodes_list.size();
-  cout<<"l size "<<l_size<<endl;
+  //cout<<"l size "<<l_size<<endl;
   if(CheckIfNodeIsNew( x, y)){
      NODE new_n;
      new_n.x=x;
