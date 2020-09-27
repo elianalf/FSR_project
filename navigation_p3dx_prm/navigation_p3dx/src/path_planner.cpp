@@ -17,7 +17,7 @@ using namespace std;
 #define _height 416
 #define pi 3.14
 #define Ts 0.01
-#define lin_vel_max 0.6
+#define lin_vel_max 0.5
 #define ang_vel_max 0.3
 
 
@@ -27,7 +27,7 @@ double y_goal=8;
 int indexStartNode=0;
 double x_start=0;
 double y_start=0;
-
+double des_yaw=0;
     
 class NAV_MAIN{
    public:
@@ -38,6 +38,7 @@ class NAV_MAIN{
 	   void odom_cb( nav_msgs::OdometryConstPtr );
 	    void nav_loop();
 	    void plan_trajectory();
+	    bool check_goal();
    private:
       ros::NodeHandle n;
       ros::Subscriber _topic_sub;	
@@ -144,6 +145,7 @@ void NAV_MAIN::plan_trajectory(){
        //cout<<j<< "n step angle"<<nstep<<endl;
        v.linear.x=0;
        //cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
+       
        for(int k=0;k<nstep;k++){
          teta_des.push_back(teta_new);
          p.poses.push_back(c_p);
@@ -181,7 +183,34 @@ void NAV_MAIN::plan_trajectory(){
      }
      //curr_p+= dir*(1.0/n_step);
    }
-   sleep(3);
+     teta_old=teta_new;
+       teta_new=des_yaw;
+       
+       teta_e=teta_new-teta_old;
+       cout<<"teta new" <<teta_new<<endl;
+       if(fabs((teta_new+3.14) - (teta_old+3.14)) > 3.14){ v.angular.z = ang_vel_max * ((teta_e>0)?-1:1); }
+       else { v.angular.z = ang_vel_max * ((teta_e>0)?1:-1); }
+       // cout<<"w angl "<< v.angular.z<<endl; 
+        
+       interval=abs(teta_e) / ang_vel_max; //time interval
+       nstep=(interval/Ts - 1);
+       //cout<<j<< "n step angle"<<nstep<<endl;
+       v.linear.x=0;
+       int cost_=ang_vel_max/nstep;
+       //cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
+       if(v.angular.z<0)
+         cost_=-cost_;
+       for(int k=0;k<nstep;k++){
+         v.angular.z= v.angular.z - cost_;
+         teta_des.push_back(teta_new);
+         p.poses.push_back(c_p);
+         pd.push_back(t);
+         v_des.push_back(v);
+         i++;
+         
+       }
+      
+   sleep(1);
 }
 
 
@@ -206,11 +235,16 @@ void NAV_MAIN::nav_loop(){
    int k1=1.9;
    int k2=2.1;
   int k3=1.9;
+  double ro=0;
+  double delta=0.00001;
+  double gamma=0.000001;
   //1.8 2 1.8 ERROR:   -0.0913248 0.00684787 -0.0230394
     //1.9 2.1 1.9 ERROR  -0.0864483 0.00439498 -0.0217074
     // 1.9 2.2 1.9 ERROR: -0.0922016 0.00687282 -0.0233763
    double teta=0;
-   for(i=0;i<traj_size;i++){
+   double er_norm=1000;
+  // while (er_norm>0.3){
+   for(i=0;i<(traj_size-1);i++){
       teta=_yaw;
       cos_sin(0,0)=cos(teta);
       cos_sin(0,1)=sin(teta);
@@ -225,10 +259,10 @@ void NAV_MAIN::nav_loop(){
       //cout<<"P DES: "<<p.poses[i].pose.position.x <<" "<<p.poses[i].pose.position.y<<" "<<teta_des[i]<<endl;
       //cout<<"P CURRENT: "<<odom_pos.x <<" "<<odom_pos.y<<" "<<teta<<endl;
       e=cos_sin*q_e;
+      er_norm=sqrt(((x_goal-q_e(0))*(x_goal-q_e(0)))+((y_goal-q_e(1))*(y_goal-q_e(1))));
       cout<<"ERROR: "<<q_e.transpose()<<endl;
     if(abs(e(2))>3.14)
        e(2)=-e(2);
-         
       
       u1=-k1*e(0);
       cmd_v.linear.x=v_des[i].linear.x*cos(e(2)) - u1;
@@ -240,76 +274,39 @@ void NAV_MAIN::nav_loop(){
       
       twist_pub.publish(cmd_v);
       r.sleep();
+      i++;
    } 
+  /* k1=0.1;
+   k2=1;
+   k3=1;
+   ro=sqrt((q_e(0)*q_e(0))+(q_e(1)*q_e(1)));
+   while(abs(q_e(2))>0.04){
+      teta=_yaw;
+      q_e<< ( odom_pos.x-p.poses[i].pose.position.x), (odom_pos.y-p.poses[i].pose.position.y), (teta-des_yaw);
+      ro=sqrt((q_e(0)*q_e(0))+(q_e(1)*q_e(1)));
+      //cout<<"ERROR 2: "<<q_e.transpose()<<endl;
+      gamma= atan2(q_e(1),q_e(0)) - teta + pi;
+		delta = gamma + teta - des_yaw;
+		cmd_v.linear.x=k1*ro*cos(gamma);
+		k=0.01;
+		cmd_v.angular.z=k2*gamma + k1*k*(gamma+k3*delta);
+		twist_pub.publish(cmd_v);
+		cout<<"cmd "<<cmd_v.linear.x<<cmd_v.angular.z<<endl;
+		r.sleep();
+		if(i<traj_size) i++;
+   }*/
+   
   cmd_v.angular.z=0;
   cmd_v.linear.x=0; 
   twist_pub.publish(cmd_v);
-   
+  r.sleep();
+  twist_pub.publish(cmd_v); 
   go=false;
   while (ros::ok()){r.sleep(); }
 }
 
 
 
-//  CONTROL BASED ON APPROXIMATE LINEARIZATION
-/*
-void NAV_MAIN::nav_loop(){
-   cout<<"5"<<endl;
-   ros::Rate r(100);
-   while(!go){
-      r.sleep();   }
-   plan_trajectory();
-   int i=0;
-   int traj_size=v_des.size();
-   Eigen::Matrix3d cos_sin;
-   Eigen::Vector3d q_e;
-   Eigen::Vector3d e;
-   double u1=0;
-   double u2=0;
-   int k1=1.4;
-   int k2=0;
-   int k3=1.4;
-   double teta=0;
-   for(i=0;i<traj_size;i++){
-      teta=_yaw;
-      cos_sin(0,0)=cos(teta);
-      cos_sin(0,1)=sin(teta);
-      cos_sin(0,2)=0;
-      cos_sin(1,0)=-sin(teta);
-      cos_sin(1,1)=cos(teta);
-      cos_sin(1,2)=0;
-      cos_sin(2,0)=0;
-      cos_sin(2,1)=0;
-      cos_sin(2,2)=1;
-      q_e<< (p.poses[i].pose.position.x -odom_pos.x), (p.poses[i].pose.position.y-odom_pos.y), (teta_des[i]-teta);
-      e=cos_sin*q_e;
-       //cout<<"P DES: "<<p.poses[i].pose.position.x <<" "<<p.poses[i].pose.position.y<<" "<<teta_des[i]<<endl;
-       cout<<"ERROR: "<<q_e.transpose()<<endl;
-       if(abs(e(2))>3.14)
-         e(2)=-e(2);
-         
-      if(v_des[i].linear.x==0){
-         cmd_v.linear.x=0;
-         k2=0;
-      }
-      else{
-         k2=(1-v_des[i].angular.z*v_des[i].angular.z)/(v_des[i].linear.x*v_des[i].linear.x);
-         u1=-k1*e(0);
-         cmd_v.linear.x=v_des[i].linear.x*cos(e(2)) - u1;
-      }
-      u2=-k2*e(1)-k3*e(2);
-      cmd_v.angular.z=v_des[i].angular.z - u2;
-      twist_pub.publish(cmd_v);
-      r.sleep();
-   } 
-  cmd_v.angular.z=0;
-  cmd_v.linear.x=0; 
-   twist_pub.publish(cmd_v);
-   
-   go=false;
-  while (ros::ok()){r.sleep(); }
-}
-*/
 
 
 /*
@@ -450,76 +447,96 @@ void NAV_MAIN::_map_cb(nav_msgs::OccupancyGrid vec_map){
 
 
 
-void NAV_MAIN::path_planning(){
-  
+
+ bool NAV_MAIN::check_goal(){ 
    cout<<"Gaol position: x "<<x_goal<<" y "<<y_goal<<endl;
    if((abs(x_goal)>6.9)||(abs(y_goal)>10.4)){
       cout<<"Outside the map. ";
       cout<<" "<<endl;
+      return false;
     }
      else if(x_goal==x_start&&y_goal==y_start){
       cout<<"start=goal, already in this position"<<endl;
+      return false;
     }
     else{
        int is_collision_free = prm.Collision_checking(x_goal,y_goal,map);
       cout<<"Is the goal position collision free?"<<endl;
       if(is_collision_free==1){
             cout<<"No"<<endl;
+            return false;
       }
       else if(is_collision_free==-1){
          cout<<"Unexplored zone "<<endl;
+         return false;
       }
       else if(is_collision_free==0){
          cout<<"Yes"<<endl;
+         return true;
+       }  
+   }    
+}
+   
+   
+void NAV_MAIN::path_planning(){   
+     bool goal_ok=false;
+     while (!goal_ok){
+        cout << "Please, enter the coordinates of the goal position."<<endl;
+        cout<<"Choose X belonging to [-6.8;6.8]: ";
+        cin>>x_goal;
+        cout<<"Choose Y belonging to [-10.3;10.3]: ";
+        cin>>y_goal;
+        goal_ok=check_goal();
+     } 
+     
+       prm.nodes_list[0].x=x_start;
+       prm.nodes_list[0].y=y_start;
+       prm.buildRoadMap(map);
+       int list_s = prm.nodes_list.size();
+       cout<<"FINISH THE MAP. SIZE "<<list_s<<endl;
+     
+      
+      /* for(int i=0; i<100;i++) {
+        cout<<i<<") ";
+         for(int j=0;j<100;j++){
+           cout<<prm.AdjacencyMatrix[i][j]<<"|"; 
+         }
+         cout<<endl;
+       }*/
     
-          prm.nodes_list[0].x=x_start;
-          prm.nodes_list[0].y=y_start;
-          prm.buildRoadMap(map);
-          int list_s = prm.nodes_list.size();
-          cout<<"FINISH THE MAP. SIZE "<<list_s<<endl;
-        
+      int indexGoalNode = prm.ConnectStartGoalToRoadmap(map,  x_goal,  y_goal, prm.nodes_list); 
+      cout<<"Index goal node "<<indexGoalNode<<" "<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
+      bool existPath = a_star.FindPathAStar( indexGoalNode, indexStartNode, prm.nodes_list, prm.AdjacencyMatrix);
+      cout<<"Is there a path? "<<endl;
+      if(existPath){
+         cout<<"YES"<<endl;
+         int i=indexGoalNode;
+         cout<<"Path (from the end)"<<endl;
+         cout<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
+         x_path.insert( x_path.begin() ,  prm.nodes_list[i].x);
+         y_path.insert( y_path.begin() ,  prm.nodes_list[i].y);
+         while ( i!= indexStartNode){
+              i=prm.nodes_list[i].parent;  
+              x_path.insert ( x_path.begin() ,  prm.nodes_list[i].x);
+              y_path.insert ( y_path.begin() ,  prm.nodes_list[i].y);
+              cout<<prm.nodes_list[i].x<<" "<<prm.nodes_list[i].y<<" "<<i<<endl;
+         }
+         cout<<"verify"<<endl;
+         nNodesPath=x_path.size();
+         for (int j=0;j<nNodesPath;j++){
+            cout<<x_path[j]<<" "<<y_path[j]<<endl;
          
-         /* for(int i=0; i<100;i++) {
-           cout<<i<<") ";
-            for(int j=0;j<100;j++){
-              cout<<prm.AdjacencyMatrix[i][j]<<"|"; 
-            }
-            cout<<endl;
-          }*/
+         }
+         sleep(1);
+         go=true;
+        cout<<" "<<endl;
+      }
+      else{
+         cout<<"NO"<<endl;
+         
+      }
        
-         int indexGoalNode = prm.ConnectStartGoalToRoadmap(map,  x_goal,  y_goal, prm.nodes_list); 
-         cout<<"Index goal node "<<indexGoalNode<<" "<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
-         bool existPath = a_star.FindPathAStar( indexGoalNode, indexStartNode, prm.nodes_list, prm.AdjacencyMatrix);
-         cout<<"Is there a path? "<<endl;
-         if(existPath){
-            cout<<"YES"<<endl;
-            int i=indexGoalNode;
-            cout<<"Path (from the end)"<<endl;
-            cout<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
-            x_path.insert( x_path.begin() ,  prm.nodes_list[i].x);
-            y_path.insert( y_path.begin() ,  prm.nodes_list[i].y);
-            while ( i!= indexStartNode){
-                 i=prm.nodes_list[i].parent;  
-                 x_path.insert ( x_path.begin() ,  prm.nodes_list[i].x);
-                 y_path.insert ( y_path.begin() ,  prm.nodes_list[i].y);
-                 cout<<prm.nodes_list[i].x<<" "<<prm.nodes_list[i].y<<" "<<i<<endl;
-            }
-            cout<<"verify"<<endl;
-            nNodesPath=x_path.size();
-            for (int j=0;j<nNodesPath;j++){
-               cout<<x_path[j]<<" "<<y_path[j]<<endl;
-            
-            }
-            sleep(3);
-            go=true;
-           cout<<" "<<endl;
-         }
-         else{
-            cout<<"NO"<<endl;
-            
-         }
-     }  
-   }
+   
 }
 
 
@@ -533,11 +550,12 @@ void NAV_MAIN::run(){
 
 int main(int argc, char** argv) {
    ros::init(argc, argv, "Define_goal_node" ) ;
+  
    NAV_MAIN m;
    while (ros::ok()){
       m.run();
    }
-  //  cin.getline(cmd, 50);
+    
    return 0 ;
 }
-
+//
