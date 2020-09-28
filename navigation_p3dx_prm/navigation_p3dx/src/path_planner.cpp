@@ -19,8 +19,8 @@ using namespace std;
 #define _height 416
 #define pi 3.14
 #define Ts 0.01
-#define lin_vel_max 0.2
-#define ang_vel_max 0.2
+#define lin_vel_max 0.3
+#define ang_vel_max 0.3
 
 ofstream myfile;
 
@@ -358,7 +358,7 @@ cout<<"4"<<endl;
    curr_p(1)=0;
    geometry_msgs::PoseStamped c_p;
    Eigen::Vector2d dir;
-   
+  
    double xdd;
    double ydd;
    int n_step;
@@ -417,7 +417,7 @@ cout<<"4"<<endl;
      }
      //curr_p+= dir*(1.0/n_step);
    }
-   sleep(3);
+   sleep(1);
 }
 
 
@@ -432,19 +432,29 @@ void NAV_MAIN::nav_loop(){
     cout<<"BEGIN LOOP"<<endl;
    int i=0;
    int traj_size=y12dot_des.size();
+   Eigen::Vector3d q_e;
    double u1=0;
+   vector<double> q_ex;
+   vector<double> q_ey;
    double u2=0;
-   int k1=1.8; //best  k= 1.5 b= 0.9 ERROR -0.259543 0.0585811
-   int k2=1.8 ; //k=2 b=0.5 ERROR 0.0602071 -0.0179005
+   double  k1=1; //best  k= 1.5 b= 0.9 ERROR -0.259543 0.0585811
+   double k2=1 ; //k=2 b=0.5 ERROR 0.0602071 -0.0179005
+   double k3=1;
    double y1=0;
    double y2=0;
    double teta=0;
+    double ro=0;
+   double delta=0.00001;
+   double gamma=0.000001;
+   double k=0;
    cout<<"PATH SIZE "<<traj_size<<endl;;
    for(i=0;i<traj_size;i++){
       teta=_yaw;
       y1= odom_pos.x + b*cos(teta);
       y2 = odom_pos.y + b*sin(teta);
-      cout<<"ERROR "<<p.poses[i].pose.position.x-odom_pos.x<<" "<<p.poses[i].pose.position.y-odom_pos.y<<endl;
+      //cout<<"ERROR "<<p.poses[i].pose.position.x-odom_pos.x<<" "<<p.poses[i].pose.position.y-odom_pos.y<<endl;
+      q_ex.push_back(p.poses[i].pose.position.x-odom_pos.x);
+      q_ey.push_back(p.poses[i].pose.position.y-odom_pos.y);
       //cout<< "Aux vel "<<y12dot_des[i].linear.x<<" "<<y12dot_des[i].linear.y<<endl;
       u1=y12dot_des[i].linear.x + k1*(y12_des[i].linear.x - y1 );
       u2=y12dot_des[i].linear.y + k2*(y12_des[i].linear.y - y2);
@@ -458,10 +468,62 @@ void NAV_MAIN::nav_loop(){
       twist_pub.publish(cmd_v);
       r.sleep();
    } 
+   i=traj_size-1;
+   k1=0.1;
+   k2=1;
+   k3=0.1;
+   teta=_yaw;
+   q_e(2)=des_yaw-teta;
+   while(abs(q_e(2))>0.03){
+      
+    /*  q_e<< ( odom_pos.x-p.poses[i].pose.position.x), (odom_pos.y-p.poses[i].pose.position.y), (teta-des_yaw);
+      ro=sqrt((q_e(0)*q_e(0))+(q_e(1)*q_e(1)));
+      //cout<<"ERROR 2: "<<q_e.transpose()<<endl;
+      gamma= atan2(q_e(1),q_e(0)) - teta + pi;
+		delta = gamma + teta - des_yaw;
+		cmd_v.linear.x=k1*ro*cos(gamma);
+		//if(gamma=0){k=0;}
+		//else{k=sin(gamma)*cos(gamma)/gamma;}
+		k=0.01;
+		cmd_v.angular.z=k2*gamma + k1*k*(gamma+k3*delta);*/
+		q_e(2)=des_yaw-teta;
+		cmd_v.linear.x=0;
+		if(abs(q_e(2))>3.14){cmd_v.angular.z = ang_vel_max * ((q_e(2)>0)?-1:1); }
+       else { cmd_v.angular.z = ang_vel_max * ((q_e(2)>0)?1:-1); }
+       
+		cmd_v.angular.z=cmd_v.angular.z ;
+		twist_pub.publish(cmd_v);
+		cout<<"cmd "<<q_e(2)<<" "<<cmd_v.angular.z<<endl;
+		r.sleep();
+		teta=_yaw;
+		q_e(2)=des_yaw-teta;
+		//if(i<traj_size) i++;
+   }
   cmd_v.angular.z=0;
   cmd_v.linear.x=0; 
   twist_pub.publish(cmd_v);
-   
+   r.sleep();
+   cmd_v.angular.z=0;
+  cmd_v.linear.x=0; 
+  twist_pub.publish(cmd_v);
+  r.sleep();
+   myfile.open ("errors.txt");
+   if (!myfile.is_open()) {cout<<"*************ERROR****************";}
+    myfile << "[ "; 
+     for(int i=0;i < traj_size;i++){
+        myfile << q_ex[i];
+        myfile << "; ";
+   }
+   myfile << " ] \n"; 
+   myfile << "[ "; 
+     for(int i=0;i <  traj_size;i++){
+        myfile <<q_ey[i];
+        myfile << "; ";
+   }
+   myfile << " ] \n"; 
+    myfile.close();
+    cout<<"END..."<<endl;
+ 
    go=false;
   while (ros::ok()){r.sleep(); }
 }
@@ -561,7 +623,7 @@ void NAV_MAIN::path_planning(){
             cout<<x_path[j]<<" "<<y_path[j]<<endl;
          
          }
-         sleep(1);
+         sleep(2);
          go=true;
         cout<<" "<<endl;
       }
