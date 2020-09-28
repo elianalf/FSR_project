@@ -1,16 +1,16 @@
 global_frame: map
-robot_base_frame: p3dx_1_tf/base_link
+robot_base_frame: tb3_0_tf/base_link
 width: 276
 height: 416
 static_map: true
 rolling_window: false
 transform_tolerance: 0.5
-robot_radius: 0.25
+robot_radius: 0.3
 
 
 plugins:
-  - {name: p3dx_1_static,                  type: "costmap_2d::StaticLayer"}
-  - {name: p3dx_1_inflation,               type: "costmap_2d::InflationLayer"}
+  - {name: tb3_0_static,                  type: "costmap_2d::StaticLayer"}
+  - {name: tb3_0_inflation,               type: "costmap_2d::InflationLayer"}
 
 static:
   unknown_cost_value: -1
@@ -18,5 +18,5 @@ static:
   map_topic: /map
 
 inflation:
-  inflation_radius: 0.3
+  inflation_radius: 0.35
   cost_scaling_factor: 0.2

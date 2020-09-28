@@ -15,13 +15,37 @@
   </include>
 
   
-  <include file="$(find p3dx_gazebo)/launch/p3dx.launch"> 
+  <!--<include file="$(find p3dx_gazebo)/launch/p3dx.launch"> 
 	<arg name="ns" value="p3dx_1" />
-
-  </include>
+  </include>-->
   
+  <!--<node pkg="tf" type="static_transform_publisher" name="world_tf" args="0 0 0 0 0 0 /map /p3dx_1_tf/odom 100" />-->
+  
+  <arg name="world"     default="w"/>
+  <arg name="tb3_x_pos" default="0"/>
+  <arg name="tb3_y_pos" default="0"/>
+  <arg name="tb3_z_pos" default="0.0"/>
+  <arg name="tb3_yaw"   default="0"/>
+ 
+    <!-- Turtlebot -->
+  <group ns = "tb3_0">
+        <param name="tf_prefix" value="tb3_0_tf"/>
+        <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_burger.urdf.xacro" />
+        <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
+            args="-urdf -model tb3_0 
+            -x $(arg tb3_x_pos) 
+            -y $(arg tb3_y_pos) 
+            -z $(arg tb3_z_pos) 
+            -Y $(arg tb3_yaw)
+            -param robot_description" />
+         
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+            <param name="publish_frequency" type="double" value="50.0" />
+        </node>
 
-  <node pkg="tf" type="static_transform_publisher" name="world_tf" args="0 0 0 0 0 0 /map /p3dx_1_tf/odom 100" />
+  </group>
+  
+  <node pkg="tf" type="static_transform_publisher" name="world_camera_tf" args="0 0 0 0 0 0 /map /tb3_0_tf/odom 100" />
   
   <arg name="map_file" default="$(find p3dx_gazebo)/maps/personal_smallwarehouse.yaml"/>
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />

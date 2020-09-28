@@ -36,7 +36,7 @@ int  _PRM::Collision_checking(double n_x,double n_y,  matrix_map map){
    i = (10.4/0.05) - (n_y/0.05); //in the map y=[-10.4m ,10.4m]  
    j = (6.9/0.05) + (n_x/0.05);  //in the map x = [-6.9m , 6.9m]
    //cout<<"The value in map_matrix: "<<i<<" "<<j<<" "<<map[i][j]<<endl;
-   if (map[i][j]>30){ //OBSTACLE
+   if (map[i][j]>20){ //OBSTACLE
       return 1;
    }
    else if(map[i][j]<0){ //UNEXPLORED
