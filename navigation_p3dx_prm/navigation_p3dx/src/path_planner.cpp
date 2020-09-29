@@ -19,7 +19,7 @@ using namespace std;
 #define _height 416
 #define pi 3.14
 #define Ts 0.01
-#define lin_vel_max 0.3
+#define lin_vel_max 0.15
 #define ang_vel_max 0.3
 
 ofstream myfile;
@@ -388,7 +388,7 @@ cout<<"4"<<endl;
        teta_new=atan2(dir(1),dir(0));
        
        interval=dir.norm() / lin_vel_max; //time interval
-       n_step=interval/Ts;//n step
+       n_step=ceil(interval/Ts);//n step
        cout<<"size "<<y12_des.size()<<" "<<p.poses.size()<<endl;
        
      while((des_node - curr_p).norm() > 0.009){
@@ -401,10 +401,10 @@ cout<<"4"<<endl;
        p.poses.push_back(c_p);
        //cout<<i<<" P "<<p.poses[i].pose.position.x<<" "<<p.poses[i-1].pose.position.x<<endl;
        
-       y12.linear.x = p.poses[i].pose.position.x + b*cos(teta_new); //y1:des= x_des + b* cos(teta_des)
-       y12.linear.y = p.poses[i].pose.position.y + b*sin(teta_new);
-       //y12.linear.x = p.poses[i].pose.position.x ; //y1:des= x_des + b* cos(teta_des)
-       //y12.linear.y = p.poses[i].pose.position.y ; 
+       //y12.linear.x = p.poses[i].pose.position.x + b*cos(teta_new); //y1:des= x_des + b* cos(teta_des)
+       //y12.linear.y = p.poses[i].pose.position.y + b*sin(teta_new);
+       y12.linear.x = p.poses[i].pose.position.x ; //y1:des= x_des + b* cos(teta_des)
+       y12.linear.y = p.poses[i].pose.position.y ; 
        y12_des.push_back(y12);
        
        t.linear.x=(y12_des[i].linear.x-y12_des[i-1].linear.x)/Ts;
@@ -436,14 +436,16 @@ void NAV_MAIN::nav_loop(){
    double u1=0;
    vector<double> q_ex;
    vector<double> q_ey;
+   vector<double> v_ex;
+   vector<double> v_ey;
    double u2=0;
-   double  k1=1; //best  k= 1.5 b= 0.9 ERROR -0.259543 0.0585811
-   double k2=1 ; //k=2 b=0.5 ERROR 0.0602071 -0.0179005
-   double k3=1;
+   double  k1=0.6; 
+   double k2=0.6; 
+   double k3=0;
    double y1=0;
    double y2=0;
    double teta=0;
-    double ro=0;
+   double ro=0;
    double delta=0.00001;
    double gamma=0.000001;
    double k=0;
@@ -453,61 +455,43 @@ void NAV_MAIN::nav_loop(){
       y1= odom_pos.x + b*cos(teta);
       y2 = odom_pos.y + b*sin(teta);
       //cout<<"ERROR "<<p.poses[i].pose.position.x-odom_pos.x<<" "<<p.poses[i].pose.position.y-odom_pos.y<<endl;
-      q_ex.push_back(p.poses[i].pose.position.x-odom_pos.x);
-      q_ey.push_back(p.poses[i].pose.position.y-odom_pos.y);
+      //q_ex.push_back(p.poses[i].pose.position.x-odom_pos.x);
+      //q_ey.push_back(p.poses[i].pose.position.y-odom_pos.y);
       //cout<< "Aux vel "<<y12dot_des[i].linear.x<<" "<<y12dot_des[i].linear.y<<endl;
       u1=y12dot_des[i].linear.x + k1*(y12_des[i].linear.x - y1 );
       u2=y12dot_des[i].linear.y + k2*(y12_des[i].linear.y - y2);
-      //cout<< "e "<<y12_des[i].linear.x - y1<<" "<<y12_des[i].linear.y - y2<<endl;
-      //cout<< "U1 U2 "<<u1<<" "<<u2<<endl;
-      
+      q_ex.push_back(y12_des[i].linear.x - y1);
+      q_ey.push_back(y12_des[i].linear.y - y2);
+      cout<< "ERROR Y "<<y12_des[i].linear.x - y1<<" "<<y12_des[i].linear.y - y2<<endl;
+
       cmd_v.linear.x = cos(teta)*u1 + sin(teta)*u2;
       cmd_v.angular.z = -sin(teta)*u1/b + cos(teta)*u2/b;
       //cout<< "COMMAND V W "<<cmd_v.linear.x<<" "<<cmd_v.angular.z<<endl;
-      
+      if (cmd_v.linear.x>0.22){cmd_v.linear.x=0.22;}
+      else if(cmd_v.linear.x<-0.22){cmd_v.linear.x=-0.22;}
+      if (cmd_v.angular.z>2.84){cout <<"OUT"<<endl; }
+      else if(cmd_v.angular.z<-2.84){cout <<"OUT"<<endl;}
       twist_pub.publish(cmd_v);
       r.sleep();
+      v_ex.push_back(cmd_v.linear.x);
+      v_ey.push_back(cmd_v.angular.z);
    } 
-   i=traj_size-1;
-   k1=0.1;
-   k2=1;
-   k3=0.1;
-   teta=_yaw;
-   q_e(2)=des_yaw-teta;
-   while(abs(q_e(2))>0.03){
-      
-    /*  q_e<< ( odom_pos.x-p.poses[i].pose.position.x), (odom_pos.y-p.poses[i].pose.position.y), (teta-des_yaw);
-      ro=sqrt((q_e(0)*q_e(0))+(q_e(1)*q_e(1)));
-      //cout<<"ERROR 2: "<<q_e.transpose()<<endl;
-      gamma= atan2(q_e(1),q_e(0)) - teta + pi;
-		delta = gamma + teta - des_yaw;
-		cmd_v.linear.x=k1*ro*cos(gamma);
-		//if(gamma=0){k=0;}
-		//else{k=sin(gamma)*cos(gamma)/gamma;}
-		k=0.01;
-		cmd_v.angular.z=k2*gamma + k1*k*(gamma+k3*delta);*/
-		q_e(2)=des_yaw-teta;
-		cmd_v.linear.x=0;
-		if(abs(q_e(2))>3.14){cmd_v.angular.z = ang_vel_max * ((q_e(2)>0)?-1:1); }
-       else { cmd_v.angular.z = ang_vel_max * ((q_e(2)>0)?1:-1); }
-       
-		cmd_v.angular.z=cmd_v.angular.z ;
-		twist_pub.publish(cmd_v);
-		cout<<"cmd "<<q_e(2)<<" "<<cmd_v.angular.z<<endl;
-		r.sleep();
-		teta=_yaw;
-		q_e(2)=des_yaw-teta;
-		//if(i<traj_size) i++;
+  myfile.open ("velocity9.txt");
+   if (!myfile.is_open()) {cout<<"*************ERROR****************";}
+    myfile << "[ "; 
+     for(int i=0;i < traj_size;i++){
+        myfile << v_ex[i];
+        myfile << "; ";
    }
-  cmd_v.angular.z=0;
-  cmd_v.linear.x=0; 
-  twist_pub.publish(cmd_v);
-   r.sleep();
-   cmd_v.angular.z=0;
-  cmd_v.linear.x=0; 
-  twist_pub.publish(cmd_v);
-  r.sleep();
-   myfile.open ("errors.txt");
+   myfile << " ] \n"; 
+   myfile << "[ "; 
+     for(int i=0;i <  traj_size;i++){
+        myfile <<v_ey[i];
+        myfile << "; ";
+   }
+   myfile << " ] \n"; 
+    myfile.close();
+    myfile.open ("errors9.txt");
    if (!myfile.is_open()) {cout<<"*************ERROR****************";}
     myfile << "[ "; 
      for(int i=0;i < traj_size;i++){
@@ -522,6 +506,66 @@ void NAV_MAIN::nav_loop(){
    }
    myfile << " ] \n"; 
     myfile.close();
+  
+   teta=_yaw;
+   q_e(2)=des_yaw-teta;
+   k1=1;
+   k2=1;
+   k3=1;
+   ro=sqrt((q_e(0)*q_e(0))+(q_e(1)*q_e(1)));
+   myfile.open ("teta.txt");
+   if (!myfile.is_open()) {cout<<"*************ERROR****************";}
+   myfile << "[ "; 
+   while(abs(q_e(2))>0.04){
+      teta=_yaw;
+      q_e<< ( x_goal-odom_pos.x), (y_goal-odom_pos.y), (teta-des_yaw);
+      ro=sqrt((q_e(0)*q_e(0))+(q_e(1)*q_e(1)));
+      //cout<<"ERROR 2: "<<q_e.transpose()<<endl;
+      gamma= atan2(q_e(1),q_e(0)) - teta ;
+		delta = gamma + teta - des_yaw;
+		cmd_v.linear.x=k1*ro*cos(gamma);
+		if(gamma==0){k=1;}
+		else{k=sin(gamma)*cos(gamma)/gamma;}
+		//k=0.01;
+		cmd_v.angular.z=k2*gamma + k1*k*(gamma+k3*delta);
+		if (cmd_v.angular.z>2.84){cmd_v.angular.z=2.84;}
+      else if(cmd_v.angular.z<-2.84){cmd_v.angular.z=-2.84;}
+		twist_pub.publish(cmd_v);
+		cout<<"cmd "<<cmd_v.angular.z<<" teta "<<teta<< " gamma "<<gamma<<" delta "<<delta<<endl;
+		r.sleep();
+		teta=_yaw;
+		myfile << teta;
+        myfile << "; ";
+		q_e(2)=teta-des_yaw;
+      
+	/*	q_e(2)=des_yaw-teta;
+		cmd_v.linear.x=0;
+		if(abs(q_e(2))>3.14){cmd_v.angular.z = ang_vel_max * ((q_e(2)>0)?-1:1); }
+       else { cmd_v.angular.z = ang_vel_max * ((q_e(2)>0)?1:-1); }
+       
+		cmd_v.angular.z=cmd_v.angular.z ;
+		twist_pub.publish(cmd_v);
+		cout<<"cmd "<<q_e(2)<<" "<<cmd_v.angular.z<<endl;
+		r.sleep();
+		teta=_yaw;
+		q_e(2)=des_yaw-teta;
+	*/
+   }
+   
+   
+   myfile << " ] \n"; 
+   
+  
+    myfile.close();
+  cmd_v.angular.z=0;
+  cmd_v.linear.x=0; 
+  twist_pub.publish(cmd_v);
+   r.sleep();
+   cmd_v.angular.z=0;
+  cmd_v.linear.x=0; 
+  twist_pub.publish(cmd_v);
+  r.sleep();
+   
     cout<<"END..."<<endl;
  
    go=false;
