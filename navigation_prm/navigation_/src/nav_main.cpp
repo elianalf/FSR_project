@@ -148,12 +148,13 @@ void NAV_MAIN::plan_trajectory(){
        //dist_ = des_node - old_p;
        dist_ = des_node - curr_p;
        dir=dist_*(1.0/dist_.norm());
-       teta_old=teta_new;
-       teta_new=atan2(dist_(1),dist_(0));
+       //teta_old=teta_new;
+       
        
        interval= dist_.norm()/lin_vel_max; //time interval
        n_step=  interval/Ts;//n step
        
+    /*    teta_new=atan2(dist_(1),dist_(0));
        teta_e=teta_new-teta_old;
        //cout<<"teta new" <<teta_new<<endl;
        if(fabs((teta_new+3.14) - (teta_old+3.14)) > 3.14){ v.angular.z = ang_vel_max * ((teta_e>0)?-1:1); 
@@ -163,7 +164,7 @@ void NAV_MAIN::plan_trajectory(){
       //cout<<j<< "n step angle"<<nstep<<endl;
        v.linear.x=0;
        //cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
-       teta_buf=teta_old;
+      teta_buf=teta_old;
        for(int k=0;k<nstep;k++){
          if(teta_buf>3.14){teta_buf=-3.1399;}
          else if(teta_buf<-3.14){teta_buf=3.1399;}
@@ -174,7 +175,7 @@ void NAV_MAIN::plan_trajectory(){
          pd.push_back(t);
          v_des.push_back(v);
         i++;
-       }
+       }*/
        //cout<<"size "<<v_des.size()<<" "<<p.poses.size()<<endl;
     
      for(int o=0; o<n_step;o++){
@@ -189,7 +190,8 @@ void NAV_MAIN::plan_trajectory(){
        t.linear.y=(p.poses[i].pose.position.y-p.poses[i-1].pose.position.y)/Ts;
       // cout<< "vel "<<t.linear.x<<" "<<t.linear.y<<endl;
        pd.push_back(t);
-       //teta_buf=atan2(pd[i].linear.y,pd[i].linear.x);
+       teta_new=atan2(pd[i].linear.y,pd[i].linear.x);
+       
        teta_des.push_back(teta_new);
        //cout<<"teta "<<teta_des[i]<<endl;
        v.angular.z = 0;
