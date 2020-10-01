@@ -160,10 +160,7 @@ void NAV_MAIN::plan_trajectory(){
          dangle=dangle*((teta_e>0)?-1:1);}
        else { v.angular.z = ang_vel_max * ((teta_e>0)?1:-1); dangle=dangle*((teta_e>0)?1:-1);}
        // cout<<"w angl "<< v.angular.z<<endl; 
-        
-      // interval=abs(teta_e) / ang_vel_max; //time interval
-      // nstep=interval/Ts;
-       //cout<<j<< "n step angle"<<nstep<<endl;
+      //cout<<j<< "n step angle"<<nstep<<endl;
        v.linear.x=0;
        //cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
        teta_buf=teta_old;
@@ -181,33 +178,20 @@ void NAV_MAIN::plan_trajectory(){
        //cout<<"size "<<v_des.size()<<" "<<p.poses.size()<<endl;
     
      for(int o=0; o<n_step;o++){
-       //dir = des_node - curr_p;
-      //dir = dir / dir.norm();
       curr_p= curr_p+ dist_*(1.0/n_step); //4.46 pag 185
-      
-      //s1=s;
-      //curr_p = old_p + s*dir;
-      //s+=dist_.norm()*(1.0/n_step);
-      
       c_p.pose.position.x = curr_p(0);
       c_p.pose.position.y = curr_p(1);
       // cout<<"pos"<<pos<<endl;
-       cout<< "Current position "<< curr_p.transpose()<<endl;
-       
-       //s1=(s-s1)/Ts;
+       cout<< "Desired position "<< curr_p.transpose()<<endl;
        p.poses.push_back(c_p);
        //cout<<i<<" P "<<p.poses[i].pose.position.x<<" "<<p.poses[i-1].pose.position.x<<endl;
        t.linear.x=(p.poses[i].pose.position.x-p.poses[i-1].pose.position.x)/Ts;
        t.linear.y=(p.poses[i].pose.position.y-p.poses[i-1].pose.position.y)/Ts;
-       //t.linear.x=s1*dir(0);
-       //t.linear.y=s1*dir(1);
       // cout<< "vel "<<t.linear.x<<" "<<t.linear.y<<endl;
-      
        pd.push_back(t);
        //teta_buf=atan2(pd[i].linear.y,pd[i].linear.x);
        teta_des.push_back(teta_new);
        //cout<<"teta "<<teta_des[i]<<endl;
-       //teta_buf=teta_des[i]-teta_des[i-1];
        v.angular.z = 0;
        v.linear.x=sqrt(pd[i].linear.x*pd[i].linear.x+pd[i].linear.y*pd[i].linear.y); //v des
        v_des.push_back(v);
@@ -216,8 +200,6 @@ void NAV_MAIN::plan_trajectory(){
        i++;
      }
     
-    // curr_p(0)=p.poses[i].pose.position.x;
-     //curr_p(1)=p.poses[i].pose.position.y;
    }
        c_p.pose.position.x = x_goal;
        c_p.pose.position.y = y_goal;
@@ -230,7 +212,6 @@ void NAV_MAIN::plan_trajectory(){
        v.angular.z = 0;
        v.linear.x=sqrt(pd[i].linear.x*pd[i].linear.x+pd[i].linear.y*pd[i].linear.y); //v des
        v_des.push_back(v);
-       
        
        teta_old=teta_new;
        teta_new=des_yaw;
@@ -282,17 +263,13 @@ void NAV_MAIN::nav_loop(){
    double u1=0;
    double u2=0;
    double teta=0;
-   double k1=1.4;
-   double k2=1;
-   double k3=1.4;
-   //turt 0.4 0.2, 0.8 0.5 0.8 ERROR: 0.0112604 0.0305559  0.108286
-   //v 0.5: 1.4 1 1.4 ERROR:   0.018201 -0.0183261 -0.0777769
-   //v 0.5 : 1.4 1.2 1.4 error -0.00408443 -0.00745268   -0.117765
+   double k1=2.1;
+   double k2=1.8;
+   double k3=2.1;
    double ro=0;
    double delta=0.00001;
    double gamma=0.000001;
    double er_norm=1000;
-  // while (er_norm>0.3){
  
    for(i=0;i<(traj_size-1);i++){
       
@@ -320,18 +297,17 @@ void NAV_MAIN::nav_loop(){
          }
          u1=-k1*e(0);
          cmd_v.linear.x=v_des[i].linear.x*cos(e(2)) - u1;
-         
          if(e(2)==0){k=1;}
          else{ k=sin(e(2))/e(2); }
          u2= - k2*v_des[i].linear.x*e(1)*k - k3*e(2);
          cmd_v.angular.z=v_des[i].angular.z - u2;
-         
+         if(abs(cmd_v.linear.x)>0.23){cmd_v.linear.x = 0.22 * ((cmd_v.linear.x>0)?1:-1); }
+         if(abs(cmd_v.angular.z)>2.85){cmd_v.angular.z = 2.84 * ((cmd_v.angular.z>0)?1:-1);}
          twist_pub.publish(cmd_v);
          r.sleep();
          v_ex.push_back(cmd_v.linear.x);
          v_ey.push_back(cmd_v.angular.z);
          
-      
       
    } 
 
@@ -341,7 +317,7 @@ void NAV_MAIN::nav_loop(){
   twist_pub.publish(cmd_v);
   r.sleep();
   twist_pub.publish(cmd_v); 
-  myfile.open ("nl_er8.txt");
+  myfile.open ("nl_er2.txt");
    if (!myfile.is_open()) {cout<<"*************ERROR****************";}
     myfile << "[ "; 
      for(int i=0;i < traj_size;i++){
@@ -357,7 +333,7 @@ void NAV_MAIN::nav_loop(){
    
     myfile.close();
     
-     myfile.open ("nl_vel8.txt");
+     myfile.open ("nl_vel2.txt");
    if (!myfile.is_open()) {cout<<"*************ERROR****************";}
     myfile << "[ "; 
      for(int i=0;i < traj_size;i++){
@@ -460,7 +436,6 @@ cout<<"4"<<endl;
 
 
 //FB LINEARIZATION
-
 void NAV_MAIN::nav_loop(){
   
    ros::Rate r(100);

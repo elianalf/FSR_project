@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(navigation_p3dx)
+project(navigation_)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -150,8 +150,8 @@ target_link_libraries(PRM ${catkin_LIBRARIES})
 add_library(A_STAR src/A_STAR.cpp)
 target_link_libraries(A_STAR ${catkin_LIBRARIES})
 
-add_executable(path_planner src/path_planner.cpp)
-target_link_libraries(path_planner PRM A_STAR NODE ${catkin_LIBRARIES})
+add_executable(nav_main src/nav_main.cpp)
+target_link_libraries(nav_main PRM A_STAR NODE ${catkin_LIBRARIES})
 
 
 

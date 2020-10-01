@@ -5,7 +5,7 @@ height: 416
 static_map: true
 rolling_window: false
 transform_tolerance: 0.5
-robot_radius: 0.3
+robot_radius: 0.20
 
 
 plugins:
@@ -18,5 +18,5 @@ static:
   map_topic: /map
 
 inflation:
-  inflation_radius: 0.35
+  inflation_radius: 0.2
   cost_scaling_factor: 0.2

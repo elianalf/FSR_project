@@ -5,7 +5,7 @@
   <arg name="gui" default="true"/>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find p3dx_gazebo)/worlds/personal_smallwarehouse.world"/>
+    <arg name="world_name" value="$(find navigation_)/worlds/personal_smallwarehouse.world"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="gui" default="$(arg gui)"/>
@@ -47,7 +47,7 @@
   
   <node pkg="tf" type="static_transform_publisher" name="world_camera_tf" args="0 0 0 0 0 0 /map /tb3_0_tf/odom 100" />
   
-  <arg name="map_file" default="$(find p3dx_gazebo)/maps/personal_smallwarehouse.yaml"/>
+  <arg name="map_file" default="$(find navigation_)/maps/personal_smallwarehouse.yaml"/>
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
   <!-- Publishes the voxel grid to rviz for display -->
@@ -57,7 +57,7 @@
 
  <!-- Run the costmap node -->
   <node name="costmap" pkg="costmap_2d" type="costmap_2d_node" >
-   <rosparam file="$(find p3dx_gazebo)/param/costmap2d.yaml" command="load" ns="costmap" />
+   <rosparam file="$(find navigation_)/param/costmap2d.yaml" command="load" ns="costmap" />
   </node>
  
          
