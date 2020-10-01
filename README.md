@@ -1,17 +1,7 @@
 # Starting from this :
 ```
 
-Pioneer P3-DX Model
 
-A ROS/Gazebo Pioneer 3DX model created by Rafael Berkvens (rafael.berkvens@uantwerpen.be) and modified by Mario Serna Hernández. This is a model adapted to the Pioneer P3-DX robot of the Movis Research & Innovation Group.
-
-Source repository:
-https://github.com/SD-Robot-Vision/PioneerModel.git
-```
-# Our work :
-```
-From their work we implemented the move base framework, with AMCL and SLAM(gmapping) alghoritm.
-```
 # To install:
 ```
 $ cd <catkin_ws>/src
