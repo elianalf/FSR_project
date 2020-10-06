@@ -72,9 +72,7 @@ void _PRM::CreateConnections(matrix_map map){
                nodes_list[list_size-1].AdjacencyVector.push_back(i);
                nodes_list[i].ArcCost.push_back(dist);
                nodes_list[list_size-1].ArcCost.push_back(dist);
-               
-            /*   AdjacencyMatrix[i][list_size-1]=dist;
-               AdjacencyMatrix[list_size-1][i]=dist;*/
+
             }
          }
       }
@@ -162,35 +160,11 @@ void _PRM::buildRoadMap(matrix_map map)
   cout<<"LIST SIZE: " <<list_size<<" num connection "<<num_connections<<endl;                     
 }
 
-//return the index of the closest node in the roadmap to the start/goal position
-/*int _PRM::ConnectStartGoalToRoadmap(matrix_map map, double x, double y, vector< NODE > nodes_list) //[X,Y] of start o goal position
-{
-  double minD = 11;
-  int minI = -1;
-  int l_size = nodes_list.size();
-  cout<<"l size "<<l_size<<endl;
-  double dx=0;
-  double dy=0;
-  double d=0;
-  for (int i = 0; i < l_size; i++) {
-     dx = x -nodes_list[i].x;
-     dy = y -nodes_list[i].y;
-     d = sqrt(dx*dx+dy*dy);
-    //cout<<"NOde "<<i<<" distance "<<d<<endl;
-    if ((d < minD) && (_prm.isCollisionFreePath(  map, dx, dy, d, nodes_list[i].x, nodes_list[i].y))){
-      minD = d;
-      minI = i;
-    }
-  }
- 
-  return minI;
-}*/
 
 /*[x,y] is the position of start o goal. If the node don't already belong to the list of nodes, it's added. 
 Then return the index in the list.*/
 int _PRM::ConnectStartGoalToRoadmap(matrix_map map, double x, double y, vector< NODE > &nodes_list) 
 {
-  
   int l_size = nodes_list.size();
   //cout<<"l size "<<l_size<<endl;
   if(CheckIfNodeIsNew( x, y)){
@@ -200,7 +174,6 @@ int _PRM::ConnectStartGoalToRoadmap(matrix_map map, double x, double y, vector< 
      nodes_list.push_back(new_n);
      CreateConnections(map);
      cout<<nodes_list.size()<<endl;
-     
      return l_size; //l_size is also the index of the new node added
    }
    else{

@@ -74,8 +74,6 @@ NAV_MAIN::NAV_MAIN(){
    b=0.2;
    pub_rviz = n.advertise<visualization_msgs::Marker>( "/visualization_marker", 1500 );
    _topic_sub = n.subscribe("/costmap/costmap/costmap", 10, &NAV_MAIN::_map_cb,this);
-   //twist_pub = n.advertise<geometry_msgs::Twist>("/p3dx_1/cmd_vel", 1000);
-    //_odom_sub = n.subscribe("/p3dx_1/odom", 0 , &NAV_MAIN::odom_cb,this);
     twist_pub = n.advertise<geometry_msgs::Twist>("/tb3_0/cmd_vel", 1000);
     _odom_sub = n.subscribe("/tb3_0/odom", 0 , &NAV_MAIN::odom_cb,this);
 }
@@ -97,13 +95,12 @@ void NAV_MAIN::odom_cb(nav_msgs::OdometryConstPtr odom_ptr) {
 
 
 
-//PLAN TRAJECTORY FOR THE FIRST NON LINEAR CONTROLLER
+//PLANNING TRAJECTORY FUNCTION FOR THENON LINEAR CONTROLLER
 void NAV_MAIN::plan_trajectory(){
    geometry_msgs::Twist t;
    geometry_msgs::Twist v;
    t = geometry_msgs::Twist();
    Eigen::Vector2d curr_p;
-   Eigen::Vector2d old_p;
    ros::Rate r(100);        //10 milliseconds
    Eigen::Vector2d des_node;
    curr_p(0)=0;
@@ -123,8 +120,7 @@ void NAV_MAIN::plan_trajectory(){
    double teta_e=0;
    double dangle=0.003;
    double interval;
-   double s=0;
-   double s1=0;
+   
    //initialization
    c_p.pose.position.x =x_start;
    c_p.pose.position.y = y_start;
@@ -134,23 +130,14 @@ void NAV_MAIN::plan_trajectory(){
    pd.push_back(t);
    v_des.push_back(t);
    teta_des.push_back(0);
-   
-   old_p(0)=0;
-   old_p(1)=0;
    //plan trajectory
    int i=1;
    for(int j=1;j<nNodesPath;j++){
        
        des_node(0)=x_path[j];
        des_node(1)=y_path[j];
-       //old_p(0)=x_path[j-1];
-       //old_p(1)=y_path[j-1];
-       //dist_ = des_node - old_p;
        dist_ = des_node - curr_p;
        dir=dist_*(1.0/dist_.norm());
-       //teta_old=teta_new;
-       
-       
        interval= dist_.norm()/lin_vel_max; //time interval
        n_step=  interval/Ts;//n step
        
@@ -177,9 +164,8 @@ void NAV_MAIN::plan_trajectory(){
         i++;
        }*/
        //cout<<"size "<<v_des.size()<<" "<<p.poses.size()<<endl;
-    
-     for(int o=0; o<n_step;o++){
-      curr_p= curr_p+ dist_*(1.0/n_step); //4.46 pag 185
+  while((des_node - curr_p).norm() > 0.009){
+      curr_p= curr_p+ dir*(1.0/n_step)*dist_.norm(); //4.46 pag 185
       c_p.pose.position.x = curr_p(0);
       c_p.pose.position.y = curr_p(1);
       // cout<<"pos"<<pos<<endl;
@@ -191,7 +177,6 @@ void NAV_MAIN::plan_trajectory(){
       // cout<< "vel "<<t.linear.x<<" "<<t.linear.y<<endl;
        pd.push_back(t);
        teta_new=atan2(pd[i].linear.y,pd[i].linear.x);
-       
        teta_des.push_back(teta_new);
        //cout<<"teta "<<teta_des[i]<<endl;
        v.angular.z = 0;
@@ -274,7 +259,6 @@ void NAV_MAIN::nav_loop(){
    double er_norm=1000;
  
    for(i=0;i<(traj_size-1);i++){
-      
          teta=_yaw;
          cos_sin(0,0)=cos(teta);
          cos_sin(0,1)=sin(teta);
@@ -290,12 +274,12 @@ void NAV_MAIN::nav_loop(){
          //cout<<"P CURRENT: "<<odom_pos.x <<" "<<odom_pos.y<<" "<<teta<<endl;
          e=cos_sin*q_e;
          er_norm=sqrt(((x_goal-q_e(0))*(x_goal-q_e(0)))+((y_goal-q_e(1))*(y_goal-q_e(1))));
-         cout<<"ERROR: "<<q_e.transpose()<<endl;
+         cout<<"Error: "<<q_e.transpose()<<endl;
          q_ex.push_back(q_e(0));
          q_ey.push_back(q_e(1));
-       if(abs(e(2))>3.14){
-          double an=6.28 - abs(e(2));
-          e(2) = an *((e(2)>0)?-1:1);;
+         if(abs(e(2))>3.14){
+           double an=6.28 - abs(e(2));
+           e(2) = an *((e(2)>0)?-1:1);;
          }
          u1=-k1*e(0);
          cmd_v.linear.x=v_des[i].linear.x*cos(e(2)) - u1;
@@ -309,11 +293,7 @@ void NAV_MAIN::nav_loop(){
          r.sleep();
          v_ex.push_back(cmd_v.linear.x);
          v_ey.push_back(cmd_v.angular.z);
-         
-      
    } 
-
-   
   cmd_v.angular.z=0;
   cmd_v.linear.x=0; 
   twist_pub.publish(cmd_v);
@@ -332,7 +312,6 @@ void NAV_MAIN::nav_loop(){
         myfile <<q_ey[i];
         myfile << "; ";
    }
-   
     myfile.close();
     
      myfile.open ("nl_vel2.txt");
@@ -348,7 +327,6 @@ void NAV_MAIN::nav_loop(){
         myfile <<v_ey[i];
         myfile << "; ";
    }
-   
     myfile.close();
     cout<<"END..."<<endl;
   go=false;
@@ -357,11 +335,10 @@ void NAV_MAIN::nav_loop(){
 
 
 
-
+// ***UNCOMMENT FOR FB LINEARIZATION**
 
 /*
- //plan FOR FB LINEARIZATION
-
+//PLANNING FUNCTION FOR FB LINEARIZATION
 void NAV_MAIN::plan_trajectory(){
 cout<<"4"<<endl;
    geometry_msgs::Twist t;
@@ -374,7 +351,6 @@ cout<<"4"<<endl;
    curr_p(1)=0;
    geometry_msgs::PoseStamped c_p;
    Eigen::Vector2d dir;
-  
    double xdd;
    double ydd;
    int n_step;
@@ -400,13 +376,10 @@ cout<<"4"<<endl;
        des_node(0)=x_path[j];
        des_node(1)=y_path[j];
        dir = des_node - curr_p;
-       
        teta_new=atan2(dir(1),dir(0));
-       
        interval=dir.norm() / lin_vel_max; //time interval
        n_step=ceil(interval/Ts);//n step
        cout<<"size "<<y12_des.size()<<" "<<p.poses.size()<<endl;
-       
      while((des_node - curr_p).norm() > 0.009){
        dir = des_node - curr_p;
        dir = dir / dir.norm();
@@ -416,22 +389,15 @@ cout<<"4"<<endl;
        c_p.pose.position.y = curr_p(1);
        p.poses.push_back(c_p);
        //cout<<i<<" P "<<p.poses[i].pose.position.x<<" "<<p.poses[i-1].pose.position.x<<endl;
-       
-       //y12.linear.x = p.poses[i].pose.position.x + b*cos(teta_new); //y1:des= x_des + b* cos(teta_des)
-       //y12.linear.y = p.poses[i].pose.position.y + b*sin(teta_new);
-       y12.linear.x = p.poses[i].pose.position.x ; //y1:des= x_des + b* cos(teta_des)
+       y12.linear.x = p.poses[i].pose.position.x ; 
        y12.linear.y = p.poses[i].pose.position.y ; 
        y12_des.push_back(y12);
-       
        t.linear.x=(y12_des[i].linear.x-y12_des[i-1].linear.x)/Ts;
        t.linear.y=(y12_des[i].linear.y-y12_des[i-1].linear.y)/Ts;
-      // cout<< "Aux vel "<<t.linear.x<<" "<<t.linear.y<<endl;
-       y12dot_des.push_back(t);  //x_dot y_dot
-       
-       
+       // cout<< "Aux vel "<<t.linear.x<<" "<<t.linear.y<<endl;
+       y12dot_des.push_back(t);  
        i++;
      }
-     //curr_p+= dir*(1.0/n_step);
    }
    sleep(1);
 }
@@ -439,7 +405,6 @@ cout<<"4"<<endl;
 
 //FB LINEARIZATION
 void NAV_MAIN::nav_loop(){
-  
    ros::Rate r(100);
    while(!go){
       r.sleep();   }
@@ -466,8 +431,8 @@ void NAV_MAIN::nav_loop(){
    double k=0;
    cout<<"PATH SIZE "<<traj_size<<endl;
   // myfile.open ("cart_error10.txt");
-    //if (!myfile.is_open()) {cout<<"*************ERROR****************";}
-   // myfile << "[ ";
+   // if (!myfile.is_open()) {cout<<"*************ERROR****************";}
+    //myfile << "[ ";
    for(i=0;i<traj_size;i++){
       teta=_yaw;
       y1= odom_pos.x + b*cos(teta);
@@ -484,7 +449,6 @@ void NAV_MAIN::nav_loop(){
       q_ex.push_back(p.poses[i].pose.position.x);
       q_ey.push_back(p.poses[i].pose.position.y);
       cout<< "ERROR Y "<<y12_des[i].linear.x - y1<<" "<<y12_des[i].linear.y - y2<<endl;
-     
       cmd_v.linear.x = cos(teta)*u1 + sin(teta)*u2;
       cmd_v.angular.z = -sin(teta)*u1/b + cos(teta)*u2/b;
       //cout<< "COMMAND V W "<<cmd_v.linear.x<<" "<<cmd_v.angular.z<<endl;
@@ -497,8 +461,8 @@ void NAV_MAIN::nav_loop(){
       v_ex.push_back(cmd_v.linear.x);
       v_ey.push_back(cmd_v.angular.z);
    } 
-   myfile << " ] \n"; 
-  myfile.close();
+   //myfile << " ] \n"; 
+  //myfile.close();
   myfile.open ("des_pos10.txt");
    if (!myfile.is_open()) {cout<<"*************ERROR****************";}
     myfile << "[ "; 
@@ -539,6 +503,7 @@ void NAV_MAIN::nav_loop(){
    //myfile.open ("RO9.txt");
   // if (!myfile.is_open()) {cout<<"*************ERROR****************";}
   // myfile << "[ "; 
+  //POSTURE REGULATION
    while(abs(q_e(2))>0.04){
       teta=_yaw;
       q_e<< ( x_goal-odom_pos.x), (y_goal-odom_pos.y), (teta-des_yaw);
@@ -560,12 +525,8 @@ void NAV_MAIN::nav_loop(){
 	//	myfile << ro;
       //  myfile << "; ";
 		q_e(2)=teta-des_yaw;
-      
-
    }
-   
   // myfile << " ] \n"; 
-   
     //myfile.close();
   cmd_v.angular.z=0;
   cmd_v.linear.x=0; 
@@ -575,13 +536,13 @@ void NAV_MAIN::nav_loop(){
   cmd_v.linear.x=0; 
   twist_pub.publish(cmd_v);
   r.sleep();
-   
     cout<<"END..."<<endl;
  
    go=false;
   while (ros::ok()){r.sleep(); }
 }
 */
+
 
 
 void NAV_MAIN::_map_cb(nav_msgs::OccupancyGrid vec_map){
@@ -591,7 +552,6 @@ void NAV_MAIN::_map_cb(nav_msgs::OccupancyGrid vec_map){
          map[_height-1-i][j]=vec_map.data[i*_width + j];
       }
    }
-  
   path_planning();
 }
 
@@ -638,22 +598,11 @@ void NAV_MAIN::path_planning(){
         cin>>y_goal;
         goal_ok=check_goal();
      } 
-     
        prm.nodes_list[0].x=x_start;
        prm.nodes_list[0].y=y_start;
        prm.buildRoadMap(map);
        int list_s = prm.nodes_list.size();
        cout<<"FINISH THE MAP. SIZE "<<list_s<<endl;
-     
-      
-      /* for(int i=0; i<100;i++) {
-        cout<<i<<") ";
-         for(int j=0;j<100;j++){
-           cout<<prm.AdjacencyMatrix[i][j]<<"|"; 
-         }
-         cout<<endl;
-       }*/
-    
       int indexGoalNode = prm.ConnectStartGoalToRoadmap(map,  x_goal,  y_goal, prm.nodes_list); 
       cout<<"Index goal node "<<indexGoalNode<<" "<<prm.nodes_list[indexGoalNode].x<<" "<<prm.nodes_list[indexGoalNode].y<<endl;
       bool existPath = a_star.FindPathAStar( indexGoalNode, indexStartNode, prm.nodes_list, prm.AdjacencyMatrix);
@@ -675,9 +624,7 @@ void NAV_MAIN::path_planning(){
          nNodesPath=x_path.size();
          for (int j=0;j<nNodesPath;j++){
             cout<<x_path[j]<<" "<<y_path[j]<<endl;
-         
          }
-         
          PubPathOnRviz();
          sleep(2);
          go=true;
@@ -738,7 +685,6 @@ void NAV_MAIN::PubPathOnRviz(){
       node_mark.color.a = 1.0;
       pub_rviz.publish(node_mark);
       r.sleep();
-
       geometry_msgs::Point p1;
       geometry_msgs::Point p2;
       p1.x=x_path[i-1];

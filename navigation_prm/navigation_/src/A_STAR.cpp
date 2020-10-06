@@ -19,7 +19,6 @@ bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &
       FindExtractNbest(nodes_list);
       
       //cout<<"New node Nbest "<<Nbest<<" "<<nodes_list[Nbest].x<<" "<<nodes_list[Nbest].y<<endl;
-      
       //check if the new Nbest node is the goal node 
       if(Nbest == indexGoalNode){
          cout<<"FOUND A PATH"<<endl;
@@ -30,19 +29,6 @@ bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &
             int j=nodes_list[Nbest].AdjacencyVector[k];
             if(nodes_list[j].cost_g==0){     
                nodes_list[j].cost_g = nodes_list[Nbest].cost_g + nodes_list[Nbest].ArcCost[k]; //MARK AS VISITED ASSIGNING A COST
-       
-       
-     /*    for(int j=0;j<num_nodes;j++){
-            if(AdjacencyMatrix[Nbest][j]>0){ // >0 means there is a connection between node number "Nbest" and node number "j"
-               //if cost_g is different from -1 the node j is visited because it has a cost
-              // cout<<"Nbest has connection with"<<j<<endl;
-               if(nodes_list[j].cost_g==0){  //UNVISITED
-                  //cout<<"Node is unvisited, defining the cost and adding to OPEN"<<endl;
-                  nodes_list[j].cost_g =   nodes_list[Nbest].cost_g + AdjacencyMatrix[Nbest][j]; //MARK AS VISITED ASSIGNING A COST*/
-                  
-                  
-                  
-                  
                   //cout<<"NODE UNVISITED"<<j<<" cost g "<<nodes_list[j].cost_g<<endl;
                   nodes_list[j].parent=Nbest; //DEFINE THE PARENT IN THE TREE
                   open_list.push_back(j);     //INSERT THE NODE J IN OPEN 
@@ -89,10 +75,7 @@ bool A_STAR::FindPathAStar(int indexGoalNode, int index_node_s, vector< NODE > &
 void A_STAR::FindExtractNbest(vector< NODE > nodes_list){
 
    int node_number=-1;
- /*  for(int i=0; i<open_list.size();i++){
-       cout<<"open list content "<<open_list[i]<<endl;
-   }
-*/
+
    int indexInOpen=0;
   // cout<<"openlist size "<<openlist_size<<endl;
    Nbest=open_list[0];
@@ -109,9 +92,6 @@ void A_STAR::FindExtractNbest(vector< NODE > nodes_list){
    vector<int>::iterator it=open_list.begin() +indexInOpen;
    open_list.erase(it );
 
-  /* for(int i=0; i<open_list.size();i++){
-      cout<<"open list content "<<open_list[i]<<endl;
-   }*/
 }
 
 
