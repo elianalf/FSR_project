@@ -294,8 +294,6 @@ void NAV_MAIN::nav_loop(){
          else{ k=sin(e(2))/e(2); }
          u2= - k2*v_des[i].linear.x*e(1)*k - k3*e(2);
          cmd_v.angular.z=v_des[i].angular.z - u2;
-         if(abs(cmd_v.linear.x)>0.23){cmd_v.linear.x = 0.22 * ((cmd_v.linear.x>0)?1:-1); }
-         if(abs(cmd_v.angular.z)>2.85){cmd_v.angular.z = 2.84 * ((cmd_v.angular.z>0)?1:-1);}
          twist_pub.publish(cmd_v);
          r.sleep();
          v_ex.push_back(cmd_v.linear.x);
@@ -459,8 +457,6 @@ void NAV_MAIN::nav_loop(){
       cmd_v.linear.x = cos(teta)*u1 + sin(teta)*u2;
       cmd_v.angular.z = -sin(teta)*u1/b + cos(teta)*u2/b;
       //cout<< "COMMAND V W "<<cmd_v.linear.x<<" "<<cmd_v.angular.z<<endl;
-      if (cmd_v.linear.x>0.22){cmd_v.linear.x=0.22;}
-      else if(cmd_v.linear.x<-0.22){cmd_v.linear.x=-0.22;}
       if (cmd_v.angular.z>2.84){cout <<"OUT"<<endl; }
       else if(cmd_v.angular.z<-2.84){cout <<"OUT"<<endl;}
       twist_pub.publish(cmd_v);
