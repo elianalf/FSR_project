@@ -16,15 +16,13 @@ $ roslaunch navigation_ smallwarehouse.launch
 Run all the files
 $ rosrun navigation_ nav_main
 
-
-
-
 It's possible also to launch Rviz
 $ rviz
 ```
 
 # Note:
 ```
+
 
 
 ```
