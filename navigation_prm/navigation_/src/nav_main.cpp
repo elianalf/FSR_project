@@ -22,7 +22,7 @@ using namespace std;
 #define pi 3.14
 #define Ts 0.01
 #define lin_vel_max 0.15
-#define ang_vel_max 0.3
+#define ang_vel_max 0.5
 
 ofstream myfile;
 
@@ -118,7 +118,7 @@ void NAV_MAIN::plan_trajectory(){
    double teta_old=0;
    double teta_buf=0;
    double teta_e=0;
-   double dangle=0.003;
+   double dangle=0.005;
    double interval;
    
    //initialization
@@ -140,16 +140,23 @@ void NAV_MAIN::plan_trajectory(){
        dir=dist_*(1.0/dist_.norm());
        interval= dist_.norm()/lin_vel_max; //time interval
        n_step=  interval/Ts;//n step
-       
-    /*    teta_new=atan2(dist_(1),dist_(0));
+       teta_old=teta_new;
+       teta_new=atan2(dist_(1),dist_(0));
        teta_e=teta_new-teta_old;
        //cout<<"teta new" <<teta_new<<endl;
+       
+       
        if(fabs((teta_new+3.14) - (teta_old+3.14)) > 3.14){ v.angular.z = ang_vel_max * ((teta_e>0)?-1:1); 
          dangle=dangle*((teta_e>0)?-1:1);}
        else { v.angular.z = ang_vel_max * ((teta_e>0)?1:-1); dangle=dangle*((teta_e>0)?1:-1);}
        // cout<<"w angl "<< v.angular.z<<endl; 
       //cout<<j<< "n step angle"<<nstep<<endl;
        v.linear.x=0;
+       if(abs(teta_e)>3.14){
+           double an=6.28 - abs(teta_e);
+           teta_e = an *((teta_e>0)?-1:1);;
+       }
+       nstep= abs(teta_e)/0.005;  
        //cout<<j<< "v w_ "<<v.linear.x<<" "<<v.angular.z<<endl;
       teta_buf=teta_old;
        for(int k=0;k<nstep;k++){
@@ -162,7 +169,7 @@ void NAV_MAIN::plan_trajectory(){
          pd.push_back(t);
          v_des.push_back(v);
         i++;
-       }*/
+       }
        //cout<<"size "<<v_des.size()<<" "<<p.poses.size()<<endl;
   while((des_node - curr_p).norm() > 0.009){
       curr_p= curr_p+ dir*(1.0/n_step)*dist_.norm(); //4.46 pag 185
@@ -516,6 +523,8 @@ void NAV_MAIN::nav_loop(){
 		else{k=sin(gamma)*cos(gamma)/gamma;}
 		//k=0.01;
 		cmd_v.angular.z=k2*gamma + k1*k*(gamma+k3*delta);
+		if (cmd_v.angular.z>2.84){cmd_v.angular.z=2.84;}
+      else if(cmd_v.angular.z<-2.84){cmd_v.angular.z=-2.84;}
 		twist_pub.publish(cmd_v);
 		cout<<"cmd "<<cmd_v.angular.z<<" teta "<<teta<< " gamma "<<gamma<<" delta "<<delta<<endl;
 		r.sleep();
