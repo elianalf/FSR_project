@@ -2,7 +2,7 @@
 # To install:
 ```
 $ cd <catkin_ws>/src
-$ git clone https://github.com/elianalf/FSR.git
+$ git clone https://github.com/elianalf/FSR_project.git
 $ cd ..
 $ catkin_make
 ```
