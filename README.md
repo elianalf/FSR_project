@@ -1,11 +1,9 @@
 # Starting from this :
 ```
-
-
 # To install:
 ```
 $ cd <catkin_ws>/src
-$ git clone https://github.com/mario-serna/pioneer_p3dx_model.git
+$ git clone https://github.com/elianalf/FSR.git
 $ cd ..
 $ catkin_make
 ```
