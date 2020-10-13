@@ -516,8 +516,6 @@ void NAV_MAIN::nav_loop(){
 		else{k=sin(gamma)*cos(gamma)/gamma;}
 		//k=0.01;
 		cmd_v.angular.z=k2*gamma + k1*k*(gamma+k3*delta);
-		if (cmd_v.angular.z>2.84){cmd_v.angular.z=2.84;}
-      else if(cmd_v.angular.z<-2.84){cmd_v.angular.z=-2.84;}
 		twist_pub.publish(cmd_v);
 		cout<<"cmd "<<cmd_v.angular.z<<" teta "<<teta<< " gamma "<<gamma<<" delta "<<delta<<endl;
 		r.sleep();
